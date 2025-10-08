@@ -26,4 +26,8 @@ After which the project can be installed in a new virtual environment simply via
 poetry install
 ```
 
-TODO: Also add pre-commit install command for contributions!
+This repo uses pre-commit hooks to ensure code quality, so if you intend to contribute after cloning/installing, it's best to set up pre-commits (to avoid failing PR checks) once with the following command:
+
+```shell
+poetry run pre-commit install
+```
