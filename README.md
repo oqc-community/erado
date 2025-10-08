@@ -3,6 +3,12 @@ Simulation suite for error mitigation via dimon erasure models.
 
 [![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml)
 
+[**ērādō**](https://en.wiktionary.org/wiki/erado) \
+Latin verb; *third conjugation*
+1. to scrape away, pare
+2. to abolish, eradicate, remove
+3. to ***erase***, delete
+
 ## Dependencies
 GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
 
