@@ -1,15 +1,15 @@
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=2.0.0,<3.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [project]
 name = "erado"
-version = "0.1.0"
 description = "Simulation suite for error mitigation via dimon erasure models."
 authors = [
     { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" }
 ]
 readme = "README.md"
+dynamic = ["version"]
 requires-python = ">=3.12"
 dependencies = [
     "numpy (>=2.3.3,<3.0.0)",
@@ -27,3 +27,11 @@ gpu = [
 
 [tool.poetry]
 packages = [{ include = "erado", from = "src" }]
+version = "0.0.0"
+
+[tool.poetry.requires-plugins]
+poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+
+[tool.poetry-dynamic-versioning]
+enable = true
+style = "pep440"
