@@ -5,13 +5,18 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "erado"
 version = "0.1.0"
-description = ""
+description = "Simulation suite for error mitigation via dimon erasure models"
 authors = [
     { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" }
 ]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "numpy (>=2.3.3,<3.0.0)",
+    "scipy (>=1.16.2,<2.0.0)",
+    "matplotlib (>=3.10.6,<4.0.0)",
+    "qiskit (>=2.2.1,<3.0.0)",
+    "qiskit-aer (>=0.17.2,<0.18.0)"
 ]
 
 
