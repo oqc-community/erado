@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "erado"
 version = "0.1.0"
-description = "Simulation suite for error mitigation via dimon erasure models"
+description = "Simulation suite for error mitigation via dimon erasure models."
 authors = [
     { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" }
 ]
