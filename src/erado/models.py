@@ -1,4 +1,4 @@
-from util import MultiprocessingRNG
+from erado.util import MultiprocessingRNG
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit

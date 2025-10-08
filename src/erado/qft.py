@@ -1,5 +1,5 @@
-from models import ErasureCircuitSampler, ErasurePassJob
-from frontend import ErasureSimFrontend, ErasureSimFrontendResults
+from erado.models import ErasureCircuitSampler, ErasurePassJob
+from erado.frontend import ErasureSimFrontend, ErasureSimFrontendResults
 
 from qiskit import generate_preset_pass_manager
 from qiskit.synthesis import synth_qft_line

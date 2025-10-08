@@ -1,5 +1,5 @@
-from models import ErasureModel
-from util import MultiprocessingRNG, standardise_counts
+from erado.models import ErasureModel
+from erado.util import MultiprocessingRNG, standardise_counts
 
 from qiskit.providers import BackendV2 as Backend
 

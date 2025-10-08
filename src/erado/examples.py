@@ -1,6 +1,6 @@
 def example_ErasurePass():
-    from circuits import ghz_circuit
-    from models import ErasurePass, add_erasure_noise
+    from erado.circuits import ghz_circuit
+    from erado.models import ErasurePass, add_erasure_noise
 
     from qiskit.transpiler import PassManager
     from qiskit_aer import AerSimulator
@@ -41,8 +41,8 @@ def example_ErasurePass():
 
 
 def example_ErasureCircuitSampler():
-    from circuits import ghz_circuit
-    from models import ErasureCircuitSampler
+    from erado.circuits import ghz_circuit
+    from erado.models import ErasureCircuitSampler
 
     from qiskit_aer import AerSimulator
 
@@ -77,9 +77,9 @@ def example_ErasureCircuitSampler():
 
 
 def example_ErasureSimFrontend():
-    from circuits import ghz_circuit
-    from models import ErasureCircuitSampler, ErasurePassJob
-    from frontend import ErasureSimFrontend
+    from erado.circuits import ghz_circuit
+    from erado.models import ErasureCircuitSampler, ErasurePassJob
+    from erado.frontend import ErasureSimFrontend
 
     from qiskit_aer import AerSimulator
     from qiskit_aer.noise import NoiseModel, depolarizing_error
