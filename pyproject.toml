@@ -20,6 +20,12 @@ dependencies = [
     "qiskit-aer (>=0.17.2,<0.18.0) ; sys_platform != 'linux'",
 ]
 
+[dependency-groups]
+dev = [
+    "poethepoet (>=0.37.0,<0.38.0)",
+    "pyright[nodejs] (>=1.1.406,<2.0.0)"
+]
+
 
 [tool.poetry]
 packages = [{ include = "erado", from = "src" }]
@@ -31,3 +37,11 @@ poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 [tool.poetry-dynamic-versioning]
 enable = true
 style = "pep440"
+
+
+[tool.poe.tasks]
+types = "pyright ."
+
+
+[tool.pyright]
+typeCheckingMode = "standard"

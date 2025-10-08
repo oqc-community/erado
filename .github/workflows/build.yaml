@@ -1,0 +1,23 @@
+name: build
+
+on: [push]
+
+jobs:
+  type-checking:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: ./.github/actions/init
+
+      - name: Install erado
+        run: |
+          poetry install
+
+      - name: Type checking with Pyright
+        run: |
+          poetry run poe types
