@@ -25,3 +25,5 @@ After which the project can be installed in a new virtual environment simply via
 ```shell
 poetry install
 ```
+
+TODO: Also add pre-commit install command for contributions!
