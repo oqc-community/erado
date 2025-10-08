@@ -140,7 +140,6 @@ def example_ErasureSimFrontend():
 if __name__ == "__main__":
     # example_ErasurePass()
     # example_ErasureCircuitSampler()
-
-    example_ErasureSimFrontend()
+    # example_ErasureSimFrontend()
 
     pass
