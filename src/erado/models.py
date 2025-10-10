@@ -1,4 +1,4 @@
-from erado.util import MultiprocessingRNG
+from erado.util import split_in_half, MultiprocessingRNG
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit
@@ -13,8 +13,10 @@ from qiskit_aer.noise import NoiseModel, pauli_error
 import numpy as np
 import numpy.typing as npt
 
+from pydantic import BaseModel, ConfigDict
+
 from itertools import chain
-from typing import Protocol
+from typing import Protocol, Self
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from collections import Counter
@@ -23,6 +25,26 @@ import logging
 
 
 _logger = logging.getLogger(__name__)
+
+
+class CircuitState(BaseModel):
+    """
+    Data structure representing the observed state of a quantum circuit.
+
+    This is equivalent to a tuple of the state of erasure checks on all qubits in the circuit (the
+    `erasure` field) and the computational state of measured qubits in the same format as is
+    returned by Qiskit backends (the `measure` field).
+    """
+    erasure: str
+    measure: str
+
+    model_config = ConfigDict(frozen=True)
+
+    # TODO: Add Jamie's fix with num_of_qubits parameter.
+    @classmethod
+    def from_string(cls, state: str) -> Self:
+        erasure, measure = split_in_half(state.replace(" ", ""))
+        return cls(erasure=erasure, measure=measure)
 
 
 class ErasureModel(Protocol):
@@ -37,7 +59,7 @@ class ErasureModel(Protocol):
     @property
     def n_erasable_gates(self) -> int: ...
 
-    def run(self, backend: Backend, shots: int) -> dict[str, int]: ...
+    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]: ...
 
 
 class ErasurePass(TransformationPass):
@@ -209,13 +231,9 @@ class ErasurePassJob:
     @property
     def n_erasable_gates(self): return self._n_erasable_gates
 
-    def run(self, backend: Backend, shots: int) -> dict[str, int]:
+    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]:
         """
         Execute the simulation on a given backend for some number of shots.
-
-        The returned distribution is a map of states to counts in the same format as would
-        normally be yielded by the given backend, but with the qubit erasure state prepended to the
-        computational state.
 
         This method temporarily replaces the backend's noise model with a copy with
         `add_erasure_noise` called on it. The original noise model is replaced at this method's
@@ -237,7 +255,9 @@ class ErasurePassJob:
         setattr(backend.options, "noise_model", nm_old)
 
         counts = result.get_counts()
-        return counts
+
+        return Counter({CircuitState.from_string(key): value
+                        for key, value in counts.items()})
 
 
 class ErasureCircuitSampler(MultiprocessingRNG):
@@ -351,13 +371,9 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             backend: Backend,
             shots: int,
             multiprocess: bool = True
-        ) -> dict[str, int]:
+        ) -> Counter[CircuitState]:
         """
         Execute the simulation on a given backend for some number of shots.
-
-        The returned distribution is a map of states to counts in the same format as would
-        normally be yielded by the given backend, but with the qubit erasure state prepended to the
-        computational state.
 
         As this is CPU-bound in the `sample` method, multiprocessing is used to parallelise the
         workload for considerable speedup. This can be disabled with the `multiprocess` parameter.
@@ -389,7 +405,8 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        return dict(counts)
+        return Counter({CircuitState.from_string(key): value
+                        for key, value in counts.items()})
 
     def _run(self, backend: Backend, shots: int) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
