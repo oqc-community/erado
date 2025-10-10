@@ -172,13 +172,15 @@ class ErasurePass(TransformationPass):
         return dag
 
 
-def get_qubit_by_name(qc: QuantumCircuit, name: str, index: int = 0) -> int:  # type: ignore
+def get_qubit_by_name(qc: QuantumCircuit, name: str, index: int = 0) -> int:
     """
     Utility function returning the index of the sole/first qubit in a qreg of a given name.
     """
     for qreg in qc.qregs:
         if qreg.name == name:
             return qc.find_bit(qreg[index])[0]
+
+    raise ValueError("Could not find a qreg with the requested name.")
 
 
 def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate: float):
