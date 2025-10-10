@@ -62,6 +62,10 @@ class ErasureModel(Protocol):
     def run(self, backend: Backend, shots: int) -> Counter[CircuitState]: ...
 
 
+EXEMPT_GATES = ["barrier", "measure"]
+"""Circuit elements which are never involved in erasure events."""
+
+
 class ErasurePass(TransformationPass):
     """
     Transpiler pass implementing erasable qubits.
@@ -106,9 +110,8 @@ class ErasurePass(TransformationPass):
 
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         # Collect all erasable quantum operations
-        exempt_nodes = ["barrier", "measure"]
         gates = [node for node in dag.op_nodes()
-                 if node.name not in exempt_nodes]
+                 if node.name not in EXEMPT_GATES]
         self._n_erasable_gates = len(gates)
 
         # Add new classical register of qubit erasure flags
@@ -278,8 +281,6 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     See `example_ErasureCircuitSampler` for example usage.
     """
-    EXEMPT_GATES = ["barrier", "measure"]
-
     def __init__(
             self,
             circuit: QuantumCircuit,
@@ -313,7 +314,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def erasable_gates(self):
         return ((i, g) for i, g in enumerate(self.circuit.data)
-                if g.name not in ErasureCircuitSampler.EXEMPT_GATES)
+                if g.name not in EXEMPT_GATES)
 
     @property
     def n_erasable_gates(self):
@@ -327,7 +328,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             for qubit in gate.qubits:
                 start = i if self.erasure_before_gates else i + 1
                 gates_to_remove.extend((j+start for j, g in enumerate(self.circuit.data[start:])
-                                        if qubit in g.qubits and g.name not in ErasureCircuitSampler.EXEMPT_GATES))
+                                        if qubit in g.qubits and g.name not in EXEMPT_GATES))
             self._lut[i] = gates_to_remove
 
     def sample(
@@ -348,7 +349,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             raise ValueError("erasure_events must have an entry for every gate in the circuit.")
 
         i_erasures = (i for i, x in enumerate(erasure_events)
-                      if x == 1 and self.circuit.data[i].name not in ErasureCircuitSampler.EXEMPT_GATES)
+                      if x == 1 and self.circuit.data[i].name not in EXEMPT_GATES)
 
         erased_qubits: set[Qubit] = set()
         gates_to_remove: set[int] = set()
