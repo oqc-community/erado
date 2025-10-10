@@ -3,12 +3,13 @@ from erado.util import MultiprocessingRNG, standardise_counts
 
 from qiskit.providers import BackendV2 as Backend
 
+from pydantic import BaseModel
+
 from dataclasses import dataclass
 from collections import Counter
 
 
-@dataclass
-class ErasureSimFrontendResults:
+class ErasureSimFrontendResults(BaseModel):
     counts: Counter[tuple[str, str]]
     shots: int
     n_rejected: int
@@ -116,10 +117,10 @@ class ErasureSimFrontend(MultiprocessingRNG):
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
         return ErasureSimFrontendResults(
-            counts,
-            total_shots,
-            n_rejected,
-            n_rejected / total_shots,
-            self.model.circuit.depth(),
-            self.model.n_erasable_gates
+            counts=counts,
+            shots=total_shots,
+            n_rejected=n_rejected,
+            rejection_rate=n_rejected / total_shots,
+            circuit_depth=self.model.circuit.depth(),
+            n_erasable_gates=self.model.n_erasable_gates
         )
