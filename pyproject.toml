@@ -45,6 +45,7 @@ style = "pep440"
 [tool.poe.tasks]
 types = "pyright ."
 pre-commit = "pre-commit run --all-files"
+unit-tests = "pytest tests/"
 
 
 [tool.pyright]
