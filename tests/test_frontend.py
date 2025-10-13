@@ -56,7 +56,6 @@ def test_measure_EOL_some(model_type: type[ErasureModel]):
     assert isinstance(results, ErasureSimFrontendResults)
     assert results.shots == shots
     assert results.counts.total() == shots
-    pass
 
 
 def test_multiprocessing_deadlock():

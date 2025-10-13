@@ -3,12 +3,6 @@ import numpy as np
 import multiprocessing
 
 
-def split_in_half(s: str) -> tuple[str, str]:
-    """Given a string, return a tuple of the first and second halves of the string."""
-    n = len(s)
-    return (s[0:n//2], s[n//2:])
-
-
 class MultiprocessingRNG:
     """
     Mixin class providing a NumPy random number generator (RNG) suitable for multiprocessing.

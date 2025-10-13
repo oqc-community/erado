@@ -30,7 +30,7 @@ def test_deserialise(state_str: str, expected: tuple[str, str]):
     ("0"*N + "1"*2, ("0"*N, "1"*2))     # Measure only some qubits
 ])
 def test_from_string(state_str: str, expected: tuple[str, str]):
-    state = CircuitState.from_string(state_str)
+    state = CircuitState.from_string(state_str, N)
     assert isinstance(state, CircuitState)
     assert state.erasure == expected[0]
     assert state.measure == expected[1]

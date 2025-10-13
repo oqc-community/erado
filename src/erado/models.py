@@ -1,4 +1,4 @@
-from erado.util import split_in_half, MultiprocessingRNG
+from erado.util import MultiprocessingRNG
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit
@@ -41,10 +41,11 @@ class CircuitState(BaseModel):
 
     model_config = ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
 
-    # TODO: Add Jamie's fix with num_of_qubits parameter.
     @classmethod
-    def from_string(cls, state: str) -> Self:
-        erasure, measure = split_in_half(state.replace(" ", ""))
+    def from_string(cls, state: str, num_qubits: int) -> Self:
+        state = state.replace(" ", "")
+        erasure = state[:num_qubits]
+        measure = state[num_qubits:]
         return cls(erasure=erasure, measure=measure)
 
     @model_serializer(mode="plain")
@@ -279,7 +280,7 @@ class ErasurePassJob:
 
         counts = result.get_counts()
 
-        return Counter({CircuitState.from_string(key): value
+        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
                         for key, value in counts.items()})
 
 
@@ -424,7 +425,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        return Counter({CircuitState.from_string(key): value
+        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
                         for key, value in counts.items()})
 
     def _run(self, backend: Backend, shots: int) -> Counter[str]:
