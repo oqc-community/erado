@@ -1,24 +1,6 @@
 import numpy as np
 
-from collections import Counter
 import multiprocessing
-
-
-def split_in_half(s: str) -> tuple[str, str]:
-    """Given a string, return a tuple of the first and second halves of the string."""
-    n = len(s)
-    return (s[0:n//2], s[n//2:])
-
-
-def standardise_counts(counts: dict[str, int]) -> Counter[tuple[str, str]]:
-    """
-    Convert a results dict in Qiskit format to a Counter of string pairs.
-
-    By trimming all whitespace and splitting in half, the first element in each tuple is the
-    erasure state of each qubit, and the second element is the computational state of each qubit.
-    """
-    return Counter({split_in_half(key.replace(" ", "")): value
-                    for key, value in counts.items()})
 
 
 class MultiprocessingRNG:

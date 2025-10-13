@@ -13,16 +13,55 @@ from qiskit_aer.noise import NoiseModel, pauli_error
 import numpy as np
 import numpy.typing as npt
 
+from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_serializer, model_validator, ValidationError
+
 from itertools import chain
-from typing import Protocol
+from typing import Any, Protocol, Self
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from collections import Counter
 import os
 import logging
+import multiprocessing
 
 
 _logger = logging.getLogger(__name__)
+
+
+class CircuitState(BaseModel):
+    """
+    Data structure representing the observed state of a quantum circuit.
+
+    This is equivalent to a tuple of the state of erasure checks on all qubits in the circuit (the
+    `erasure` field) and the computational state of measured qubits in the same format as is
+    returned by Qiskit backends (the `measure` field).
+    """
+    erasure: str
+    measure: str
+
+    model_config = ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
+
+    @classmethod
+    def from_string(cls, state: str, num_qubits: int) -> Self:
+        state = state.replace(" ", "")
+        erasure = state[:num_qubits]
+        measure = state[num_qubits:]
+        return cls(erasure=erasure, measure=measure)
+
+    @model_serializer(mode="plain")
+    def serialise(self) -> str:
+        return f"{self.erasure},{self.measure}"
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def deserialise(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if isinstance(value, str):
+            try:
+                erasure, measure = value.split(",", 1)
+                return cls(erasure=erasure, measure=measure)
+            except ValueError:
+                raise ValidationError("Could not deserialise CircuitState from string.")
+        return handler(value)
 
 
 class ErasureModel(Protocol):
@@ -37,7 +76,13 @@ class ErasureModel(Protocol):
     @property
     def n_erasable_gates(self) -> int: ...
 
-    def run(self, backend: Backend, shots: int) -> dict[str, int]: ...
+    def __init__(self, circuit: QuantumCircuit, erasure_rate: float): ...
+
+    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]: ...
+
+
+EXEMPT_GATES = ["barrier", "measure"]
+"""Circuit elements which are never involved in erasure events."""
 
 
 class ErasurePass(TransformationPass):
@@ -84,9 +129,8 @@ class ErasurePass(TransformationPass):
 
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         # Collect all erasable quantum operations
-        exempt_nodes = ["barrier", "measure"]
         gates = [node for node in dag.op_nodes()
-                 if node.name not in exempt_nodes]
+                 if node.name not in EXEMPT_GATES]
         self._n_erasable_gates = len(gates)
 
         # Add new classical register of qubit erasure flags
@@ -147,13 +191,15 @@ class ErasurePass(TransformationPass):
         return dag
 
 
-def get_qubit_by_name(qc: QuantumCircuit, name: str, index: int = 0) -> int:  # type: ignore
+def get_qubit_by_name(qc: QuantumCircuit, name: str, index: int = 0) -> int:
     """
     Utility function returning the index of the sole/first qubit in a qreg of a given name.
     """
     for qreg in qc.qregs:
         if qreg.name == name:
             return qc.find_bit(qreg[index])[0]
+
+    raise ValueError("Could not find a qreg with the requested name.")
 
 
 def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate: float):
@@ -209,13 +255,9 @@ class ErasurePassJob:
     @property
     def n_erasable_gates(self): return self._n_erasable_gates
 
-    def run(self, backend: Backend, shots: int) -> dict[str, int]:
+    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]:
         """
         Execute the simulation on a given backend for some number of shots.
-
-        The returned distribution is a map of states to counts in the same format as would
-        normally be yielded by the given backend, but with the qubit erasure state prepended to the
-        computational state.
 
         This method temporarily replaces the backend's noise model with a copy with
         `add_erasure_noise` called on it. The original noise model is replaced at this method's
@@ -237,7 +279,9 @@ class ErasurePassJob:
         setattr(backend.options, "noise_model", nm_old)
 
         counts = result.get_counts()
-        return counts
+
+        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
+                        for key, value in counts.items()})
 
 
 class ErasureCircuitSampler(MultiprocessingRNG):
@@ -258,21 +302,19 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     See `example_ErasureCircuitSampler` for example usage.
     """
-    EXEMPT_GATES = ["barrier", "measure"]
-
     def __init__(
             self,
             circuit: QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
-            timeout: float | None = 10
+            timeout: float | None = 10.0
         ):
         self._circuit = circuit
         self._erasure_rate = erasure_rate
         self._erasure_before_gates = erasure_before_gates
         self._timeout = timeout
 
-        self._main_pid = os.getpid()  # Used to handle the Qiskit multiprocessing bug in the run method
+        self._main_pid = os.getpid()  # Used for cleaner error handling whilst multiprocessing
 
         self._precompute_lut()
 
@@ -293,7 +335,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def erasable_gates(self):
         return ((i, g) for i, g in enumerate(self.circuit.data)
-                if g.name not in ErasureCircuitSampler.EXEMPT_GATES)
+                if g.name not in EXEMPT_GATES)
 
     @property
     def n_erasable_gates(self):
@@ -307,7 +349,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             for qubit in gate.qubits:
                 start = i if self.erasure_before_gates else i + 1
                 gates_to_remove.extend((j+start for j, g in enumerate(self.circuit.data[start:])
-                                        if qubit in g.qubits and g.name not in ErasureCircuitSampler.EXEMPT_GATES))
+                                        if qubit in g.qubits and g.name not in EXEMPT_GATES))
             self._lut[i] = gates_to_remove
 
     def sample(
@@ -328,7 +370,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             raise ValueError("erasure_events must have an entry for every gate in the circuit.")
 
         i_erasures = (i for i, x in enumerate(erasure_events)
-                      if x == 1 and self.circuit.data[i].name not in ErasureCircuitSampler.EXEMPT_GATES)
+                      if x == 1 and self.circuit.data[i].name not in EXEMPT_GATES)
 
         erased_qubits: set[Qubit] = set()
         gates_to_remove: set[int] = set()
@@ -351,32 +393,26 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             backend: Backend,
             shots: int,
             multiprocess: bool = True
-        ) -> dict[str, int]:
+        ) -> Counter[CircuitState]:
         """
         Execute the simulation on a given backend for some number of shots.
-
-        The returned distribution is a map of states to counts in the same format as would
-        normally be yielded by the given backend, but with the qubit erasure state prepended to the
-        computational state.
 
         As this is CPU-bound in the `sample` method, multiprocessing is used to parallelise the
         workload for considerable speedup. This can be disabled with the `multiprocess` parameter.
 
-        Note that Qiskit introduces buggy behaviour in backend runs in its own use of
-        multithreading. If a backend simulation job is performed before this multiprocess-enabled
-        run, this run will likely hang, even if a new backend object is created. Therefore, prefer
-        to perform other runs after any usage of this model, or in separate programs.
-
-        To help catch the above situation, if any single shot within a child process takes longer
-        than the `timeout` property (default: 10 seconds) to complete, the child will kill itself.
-        This will manifest as either a `TimeoutError` or `BrokenProcessPool` exception. To disable
-        this timeout completely, set `timeout` to None.
+        If any single shot within a child process takes longer than the `timeout` property
+        (default: 10 seconds) to complete, the child will kill itself. This will manifest as either
+        a `TimeoutError` or `BrokenProcessPool` exception. To disable this timeout completely, set
+        `timeout` to None.
         """
         if multiprocess:
             # Invoke _run on multiple processes on subsets of the problem
             counts: Counter[str] = Counter()
-            with ProcessPoolExecutor(initializer=self._reseed) as executor:
-                max_workers: int = executor._max_workers  # type: ignore
+            with ProcessPoolExecutor(
+                    initializer=self._reseed,
+                    mp_context=multiprocessing.get_context("spawn")
+                ) as executor:
+                max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
                 counters_futures = [executor.submit(self._run, backend, shots_each) for _ in range(max_workers - 1)]
                 counters_futures.append(executor.submit(self._run, backend, shots_each + (shots % max_workers)))
@@ -389,12 +425,12 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        return dict(counts)
+        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
+                        for key, value in counts.items()})
 
     def _run(self, backend: Backend, shots: int) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
         counts: Counter[str] = Counter()
-
         with ThreadPoolExecutor(max_workers=1) as executor:
             for _ in range(shots):
                 circuit, _, erased_qubits = self.sample()

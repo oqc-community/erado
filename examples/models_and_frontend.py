@@ -9,16 +9,11 @@ def example_ErasurePass():
 
     n = 8
     qc = ghz_circuit(n)
-
-    # import qiskit.quantum_info as qi
-    # iswap_op = qi.Operator([[1, 0, 0, 0],
-    #                         [0, 0, 1j, 0],
-    #                         [0, 1j, 0, 0],
-    #                         [0, 0, 0, 1]])
-    # qc.unitary(iswap_op, [0, 1], label='iswap')
+    qc.measure_all()
 
     print(qc)
 
+    # You can either set up the ErasurePass model manually:
     pm = PassManager([ErasurePass(erasure_before_gates=False)])
     qc_erasure = pm.run(qc)
 
@@ -35,6 +30,11 @@ def example_ErasurePass():
     result = backend.run(qc_erasure, shots=shots).result()
     t1 = time.time()
     print(result.get_counts())
+
+    # ...or preferably, just use the ErasurePassJob class which wraps this whole process as an ErasureModel:
+    # erasure_simulator = ErasurePassJob(qc, erasure_rate)
+    # counts = erasure_simulator.run(backend, shots)
+    # print(counts)
 
     dt = t1 - t0
     print(f"Time: {dt} seconds")
@@ -55,6 +55,7 @@ def example_ErasureCircuitSampler():
 
     n = 8
     qc = ghz_circuit(n)
+    qc.measure_all()
     print(qc)
 
     # shots = 1000000
@@ -97,6 +98,7 @@ def example_ErasureSimFrontend():
     # Circuit
     n = 8
     circuit = ghz_circuit(n)
+    circuit.measure_all()
 
     # Non-erasure noise model, e.g. depolarising
     # Note the avoidance of add_all_qubit_quantum_error so as not to interfere with ErasurePass' ancilla

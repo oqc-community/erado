@@ -1,15 +1,15 @@
-from erado.models import ErasureModel
-from erado.util import MultiprocessingRNG, standardise_counts
+from erado.models import ErasureModel, CircuitState
+from erado.util import MultiprocessingRNG
 
 from qiskit.providers import BackendV2 as Backend
 
-from dataclasses import dataclass
+from pydantic import BaseModel
+
 from collections import Counter
 
 
-@dataclass
-class ErasureSimFrontendResults:
-    counts: Counter[tuple[str, str]]
+class ErasureSimFrontendResults(BaseModel):
+    counts: Counter[CircuitState]
     shots: int
     n_rejected: int
     rejection_rate: float
@@ -58,9 +58,9 @@ class ErasureSimFrontend(MultiprocessingRNG):
         bits = self._rng.binomial(1, p, self.num_qubits)
         return int("".join(str(bit) for bit in bits), 2)
 
-    def _add_check_noise(self, state: tuple[str, str]) -> tuple[str, str]:
+    def _add_check_noise(self, state: CircuitState) -> CircuitState:
         # Represent erasure state as bitstring
-        x = int(state[0], 2)
+        x = int(state.erasure, 2)
 
         # Generate random false pos/neg bit-flip noise
         e_false_neg_raw = self._bernoulli_bitstring(self.false_negative_rate)
@@ -75,21 +75,20 @@ class ErasureSimFrontend(MultiprocessingRNG):
         x_noisy = x ^ e_false_neg ^ e_false_pos
         x_noisy_str = format(x_noisy, f"0{self.num_qubits}b")
 
-        return x_noisy_str, state[1]
+        return CircuitState(erasure=x_noisy_str, measure=state.measure)
 
-    def _run_once(self, backend: Backend, shots: int) -> Counter[tuple[str, str]]:
+    def _run_once(self, backend: Backend, shots: int) -> Counter[CircuitState]:
         counts = self.model.run(backend, shots)
-        counts = standardise_counts(counts)
 
         if self.noisy_checks:
             counts = Counter((self._add_check_noise(elt) for elt in counts.elements()))
 
         return counts
 
-    def _count_rejected(self, counts) -> int:
+    def _count_rejected(self, counts: Counter[CircuitState]) -> int:
         return sum((count
                     for state, count in counts.items()
-                    if state[0] != "0"*self.num_qubits))
+                    if state.erasure != "0"*self.num_qubits))
 
     def run(self, backend: Backend, shots: int, postselect: bool = False) -> ErasureSimFrontendResults:
         """
@@ -116,10 +115,10 @@ class ErasureSimFrontend(MultiprocessingRNG):
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
         return ErasureSimFrontendResults(
-            counts,
-            total_shots,
-            n_rejected,
-            n_rejected / total_shots,
-            self.model.circuit.depth(),
-            self.model.n_erasable_gates
+            counts=counts,
+            shots=total_shots,
+            n_rejected=n_rejected,
+            rejection_rate=n_rejected / total_shots,
+            circuit_depth=self.model.circuit.depth(),
+            n_erasable_gates=self.model.n_erasable_gates
         )

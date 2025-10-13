@@ -127,14 +127,14 @@ def example_QFT_sweep(plot_error_bars=True):
         filepath_log_exists = filepath_log.is_file()
 
     for i, n in enumerate(num_qubits):
-        filepath = Path(f"qft_sweep_n{n}.bin")
+        filepath = Path(f"qft_sweep_n{n}.json")
         if filepath.is_file():
             with open(filepath, "rb") as file:
-                results: ErasureSimFrontendResults = pickle.load(file)
+                results = ErasureSimFrontendResults.model_validate_json(file.read())
         else:
             results, time = run_simulation(noise_params, n)
-            with open(filepath, "wb") as file:
-                pickle.dump(results, file)
+            with open(filepath, "w") as file:
+                file.write(results.model_dump_json(indent=4) + "\n")
             simulation_time[i] = time
             with open(filepath_log, "w") as file_log:
                 log_writer = csv.writer(file_log)
@@ -205,9 +205,9 @@ def plot_ideal_v_noisy(plot_error_bars=True):
     rejection_rate_ideal = np.zeros(len(num_qubits))
     intervals_ideal = np.zeros((2, len(num_qubits)))
     for i, n in enumerate(num_qubits):
-        filepath = Path("ideal") / f"qft_sweep_n{n}.bin"
+        filepath = Path("ideal") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
-            results: ErasureSimFrontendResults = pickle.load(file)
+            results = ErasureSimFrontendResults.model_validate_json(file.read())
 
         circuit_depth[i] = results.circuit_depth
         n_erasable_gates[i] = results.n_erasable_gates
@@ -221,9 +221,9 @@ def plot_ideal_v_noisy(plot_error_bars=True):
     rejection_rate_noisy = np.zeros(len(num_qubits))
     intervals_noisy = np.zeros((2, len(num_qubits)))
     for i, n in enumerate(num_qubits):
-        filepath = Path("noisy") / f"qft_sweep_n{n}.bin"
+        filepath = Path("noisy") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
-            results: ErasureSimFrontendResults = pickle.load(file)
+            results = ErasureSimFrontendResults.model_validate_json(file.read())
 
         test = binomtest(results.n_rejected, results.shots)
         rejection_rate_noisy[i] = test.statistic  # this is just k/n, i.e. results.rejection_rate

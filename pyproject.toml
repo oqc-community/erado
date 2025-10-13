@@ -10,7 +10,7 @@ authors = [
 ]
 readme = "README.md"
 dynamic = ["version"]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "numpy (>=2.3.3,<3.0.0)",
     "scipy (>=1.16.2,<2.0.0)",
@@ -18,6 +18,7 @@ dependencies = [
     "qiskit (>=2.2.1,<3.0.0)",
     "qiskit-aer-gpu-cu11 (>=0.17.2,<0.18.0) ; sys_platform == 'linux'",
     "qiskit-aer (>=0.17.2,<0.18.0) ; sys_platform != 'linux'",
+    "pydantic (>=2.12.0,<3.0.0)",
 ]
 
 [dependency-groups]
@@ -25,6 +26,7 @@ dev = [
     "poethepoet (>=0.37.0,<0.38.0)",
     "pyright[nodejs] (>=1.1.406,<2.0.0)",
     "pre-commit (>=4.3.0,<5.0.0)",
+    "pytest (>=8.4.2,<9.0.0)",
     "ruff (>=0.14.0,<0.15.0)"
 ]
 
@@ -44,6 +46,7 @@ style = "pep440"
 [tool.poe.tasks]
 types = "pyright ."
 pre-commit = "pre-commit run --all-files"
+unit-tests = "pytest tests/"
 lint = "ruff check src/erado"
 
 
