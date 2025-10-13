@@ -410,7 +410,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             # Invoke _run on multiple processes on subsets of the problem
             counts: Counter[str] = Counter()
             with ProcessPoolExecutor(initializer=self._reseed) as executor:
-                max_workers: int = executor._max_workers  # type: ignore
+                max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
                 counters_futures = [executor.submit(self._run, backend, shots_each) for _ in range(max_workers - 1)]
                 counters_futures.append(executor.submit(self._run, backend, shots_each + (shots % max_workers)))
