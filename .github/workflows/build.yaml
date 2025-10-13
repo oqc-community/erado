@@ -62,3 +62,23 @@ jobs:
       - name: Run all unit tests
         run: |
           poetry run poe unit-tests
+
+  lint:
+    runs-on:
+      group: gha-oqc-tech
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: ./.github/actions/init
+
+      - name: Install erado
+        run: |
+          poetry install
+
+      - name: Lint Python with Ruff
+        run: |
+          poetry run poe lint
