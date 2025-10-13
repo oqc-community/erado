@@ -22,6 +22,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from collections import Counter
 import os
 import logging
+import multiprocessing
 
 
 _logger = logging.getLogger(__name__)
@@ -305,14 +306,14 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             circuit: QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
-            timeout: float | None = 10
+            timeout: float | None = 10.0
         ):
         self._circuit = circuit
         self._erasure_rate = erasure_rate
         self._erasure_before_gates = erasure_before_gates
         self._timeout = timeout
 
-        self._main_pid = os.getpid()  # Used to handle the Qiskit multiprocessing bug in the run method
+        self._main_pid = os.getpid()  # Used for cleaner error handling whilst multiprocessing
 
         self._precompute_lut()
 
@@ -398,20 +399,18 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         As this is CPU-bound in the `sample` method, multiprocessing is used to parallelise the
         workload for considerable speedup. This can be disabled with the `multiprocess` parameter.
 
-        Note that Qiskit introduces buggy behaviour in backend runs in its own use of
-        multithreading. If a backend simulation job is performed before this multiprocess-enabled
-        run, this run will likely hang, even if a new backend object is created. Therefore, prefer
-        to perform other runs after any usage of this model, or in separate programs.
-
-        To help catch the above situation, if any single shot within a child process takes longer
-        than the `timeout` property (default: 10 seconds) to complete, the child will kill itself.
-        This will manifest as either a `TimeoutError` or `BrokenProcessPool` exception. To disable
-        this timeout completely, set `timeout` to None.
+        If any single shot within a child process takes longer than the `timeout` property
+        (default: 10 seconds) to complete, the child will kill itself. This will manifest as either
+        a `TimeoutError` or `BrokenProcessPool` exception. To disable this timeout completely, set
+        `timeout` to None.
         """
         if multiprocess:
             # Invoke _run on multiple processes on subsets of the problem
             counts: Counter[str] = Counter()
-            with ProcessPoolExecutor(initializer=self._reseed) as executor:
+            with ProcessPoolExecutor(
+                    initializer=self._reseed,
+                    mp_context=multiprocessing.get_context("spawn")
+                ) as executor:
                 max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
                 counters_futures = [executor.submit(self._run, backend, shots_each) for _ in range(max_workers - 1)]
@@ -431,7 +430,6 @@ class ErasureCircuitSampler(MultiprocessingRNG):
     def _run(self, backend: Backend, shots: int) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
         counts: Counter[str] = Counter()
-
         with ThreadPoolExecutor(max_workers=1) as executor:
             for _ in range(shots):
                 circuit, _, erased_qubits = self.sample()
