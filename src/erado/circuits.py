@@ -1,3 +1,5 @@
+"""Provides a selection of quantum circuits for benchmarking."""
+
 from qiskit import QuantumCircuit
 
 

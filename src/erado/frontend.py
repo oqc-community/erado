@@ -1,3 +1,5 @@
+"""Provides a frontend class for using the erasure simulation models."""
+
 from erado.models import ErasureModel, CircuitState
 from erado.util import MultiprocessingRNG
 

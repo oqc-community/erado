@@ -1,3 +1,5 @@
+"""Provides the underlying erasure simulation models."""
+
 from erado.util import MultiprocessingRNG
 
 from qiskit import QuantumCircuit

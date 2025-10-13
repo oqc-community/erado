@@ -1,3 +1,5 @@
+"""Miscellaneous utilities used across the erado library."""
+
 import numpy as np
 
 import multiprocessing
