@@ -11,6 +11,7 @@ from collections import Counter
 
 
 class ErasureSimFrontendResults(BaseModel):
+    """Data structure of the results from an `ErasureSimFrontend` run."""
     counts: Counter[CircuitState]
     shots: int
     n_rejected: int
@@ -20,10 +21,9 @@ class ErasureSimFrontendResults(BaseModel):
 
 
 class ErasureSimFrontend(MultiprocessingRNG):
-    """
-    Erasure simulation frontend supporting any `ErasureModel`.
+    """Erasure simulation frontend supporting any `ErasureModel`.
 
-    This utility adds logic for postselection on end-of-line erasure checks, as well as noise
+    This utility adds logic for postselection on end-of-line (EOL) erasure checks, as well as noise
     on these checks in the form of false positive/negative rates.
 
     See `example_ErasureSimFrontend` for example usage.
@@ -35,25 +35,43 @@ class ErasureSimFrontend(MultiprocessingRNG):
             false_positive_rate: float = 0,
             false_negative_rate: float = 0
         ):
+        """Construct an `ErasureSimFrontend`.
+
+        Args:
+            model: Configured `ErasureModel` to use for simulation.
+            noisy_checks: If true, EOL erasure checks are subject to noise.
+            false_positive_rate: Probability that negative erasure checks are flipped.
+            false_negative_rate: Probability that positive erasure checks are flipped.
+        """
         self._model = model
         self._noisy_checks = noisy_checks
         self._false_positive_rate = false_positive_rate
         self._false_negative_rate = false_negative_rate
 
     @property
-    def model(self): return self._model
+    def model(self) -> ErasureModel:
+        """`ErasureModel` used to construct this `ErasureSimFrontend`."""
+        return self._model
 
     @property
-    def noisy_checks(self): return self._noisy_checks
+    def noisy_checks(self) -> bool:
+        """If true, EOL erasure checks are subject to noise."""
+        return self._noisy_checks
 
     @property
-    def false_positive_rate(self): return self._false_positive_rate
+    def false_positive_rate(self) -> float:
+        """Probability that negative erasure checks are flipped."""
+        return self._false_positive_rate
 
     @property
-    def false_negative_rate(self): return self._false_negative_rate
+    def false_negative_rate(self) -> float:
+        """Probability that positive erasure checks are flipped."""
+        return self._false_negative_rate
 
     @property
-    def num_qubits(self) -> int: return self.model.circuit.num_qubits
+    def num_qubits(self) -> int:
+        """Number of qubits in the quantum circuit."""
+        return self.model.circuit.num_qubits
 
     def _bernoulli_bitstring(self, p: float) -> int:
         """Generate an integer with each bit set with probability p."""
@@ -93,13 +111,24 @@ class ErasureSimFrontend(MultiprocessingRNG):
                     if state.erasure != "0"*self.num_qubits))
 
     def run(self, backend: Backend, shots: int, postselect: bool = False) -> ErasureSimFrontendResults:
-        """
-        Execute the simulation on a given backend for some number of shots.
+        """Execute the simulation on a given backend for some number of shots.
 
         This uses the `run` method on the `model` to generate the target number of shots.
         Postselection can be enabled by setting `postselect` to `True`, in which case any shots
         where any qubits were erased (as per potentially-noisy end-of-line checks) are rejected.
         Further shots are generated via the `model` until the target number of shots are accepted.
+
+        Args:
+            backend: Circuit simulator backend.
+            shots: Target number of shots.
+            postselect: If true, postselect on negative erasure checks until the target number of
+                shots.
+
+        Raises:
+            RuntimeError: If the resultant number of shots does not equal the target for some reason.
+
+        Returns:
+            Data structure of results and statistics from the simulation.
         """
         counts = self._run_once(backend, shots)
         total_shots = shots
