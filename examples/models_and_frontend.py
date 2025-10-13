@@ -9,6 +9,7 @@ def example_ErasurePass():
 
     n = 8
     qc = ghz_circuit(n)
+    qc.measure_all()
 
     print(qc)
 
@@ -54,6 +55,7 @@ def example_ErasureCircuitSampler():
 
     n = 8
     qc = ghz_circuit(n)
+    qc.measure_all()
     print(qc)
 
     # shots = 1000000
@@ -96,6 +98,7 @@ def example_ErasureSimFrontend():
     # Circuit
     n = 8
     circuit = ghz_circuit(n)
+    circuit.measure_all()
 
     # Non-erasure noise model, e.g. depolarising
     # Note the avoidance of add_all_qubit_quantum_error so as not to interfere with ErasurePass' ancilla
