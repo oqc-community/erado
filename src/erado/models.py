@@ -13,10 +13,10 @@ from qiskit_aer.noise import NoiseModel, pauli_error
 import numpy as np
 import numpy.typing as npt
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_serializer, model_validator, ValidationError
 
 from itertools import chain
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from collections import Counter
@@ -38,13 +38,28 @@ class CircuitState(BaseModel):
     erasure: str
     measure: str
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
 
     # TODO: Add Jamie's fix with num_of_qubits parameter.
     @classmethod
     def from_string(cls, state: str) -> Self:
         erasure, measure = split_in_half(state.replace(" ", ""))
         return cls(erasure=erasure, measure=measure)
+
+    @model_serializer(mode="plain")
+    def serialise(self) -> str:
+        return f"{self.erasure},{self.measure}"
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def deserialise(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        if isinstance(value, str):
+            try:
+                erasure, measure = value.split(",", 1)
+                return cls(erasure=erasure, measure=measure)
+            except ValueError:
+                raise ValidationError("Could not deserialise CircuitState from string.")
+        return handler(value)
 
 
 class ErasureModel(Protocol):
