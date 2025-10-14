@@ -12,7 +12,10 @@ N = 4
 """Number of qubits to use in these tests, unless otherwise specified."""
 
 
-@pytest.mark.parametrize("model_type", [ErasureCircuitSampler, ErasurePassJob])
+MODEL_TYPES: list[type[ErasureModel]] = [ErasureCircuitSampler, ErasurePassJob]
+
+
+@pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_all(model_type: type[ErasureModel]):
     """
     Test basic simulator usage, assuming end-of-line measurements on all qubits.
@@ -33,7 +36,7 @@ def test_measure_EOL_all(model_type: type[ErasureModel]):
     assert results.counts.total() == shots
 
 
-@pytest.mark.parametrize("model_type", [ErasureCircuitSampler, ErasurePassJob])
+@pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_some(model_type: type[ErasureModel]):
     """
     Test basic simulator usage, assuming end-of-line measurements on only some qubits.
