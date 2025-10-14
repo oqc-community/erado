@@ -17,9 +17,7 @@ MODEL_TYPES: list[type[ErasureModel]] = [ErasureCircuitSampler, ErasurePassJob]
 
 @pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_all(model_type: type[ErasureModel]):
-    """
-    Test basic simulator usage, assuming end-of-line measurements on all qubits.
-    """
+    """Test basic simulator usage, assuming end-of-line measurements on all qubits."""
     circuit = ghz_circuit(N)
     circuit.measure_all()
 
@@ -38,9 +36,7 @@ def test_measure_EOL_all(model_type: type[ErasureModel]):
 
 @pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_some(model_type: type[ErasureModel]):
-    """
-    Test basic simulator usage, assuming end-of-line measurements on only some qubits.
-    """
+    """Test basic simulator usage, assuming end-of-line measurements on only some qubits."""
     circuit = ghz_circuit(N)
 
     circuit.add_register(ClassicalRegister(N-2, "meas"))
@@ -62,8 +58,7 @@ def test_measure_EOL_some(model_type: type[ErasureModel]):
 
 
 def test_multiprocessing_deadlock():
-    """
-    Test for regressions in the Qiskit multiprocessing bug.
+    """Test for regressions in the Qiskit multiprocessing bug.
 
     Qiskit seems to introduce some buggy behaviour in backend runs due to its own use of
     multithreading. If a backend simulation job is performed before a multiprocess-enabled

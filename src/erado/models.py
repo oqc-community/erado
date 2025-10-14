@@ -4,6 +4,7 @@ from erado.util import MultiprocessingRNG
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit
+from qiskit._accelerate.circuit import CircuitInstruction  # TODO: try to create stub (and for qubit/registers?)
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.dagcircuit import DAGCircuit
@@ -15,13 +16,14 @@ from qiskit_aer.noise import NoiseModel, pauli_error
 import numpy as np
 import numpy.typing as npt
 
-from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_serializer, model_validator, ValidationError
+from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_validator, ValidationError
 
 from itertools import chain
-from typing import Any, Protocol, Self
+from typing import Protocol, Self, override
 from copy import deepcopy
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from collections import Counter
+from collections.abc import Generator
 import os
 import logging
 import multiprocessing
@@ -31,8 +33,7 @@ _logger = logging.getLogger(__name__)
 
 
 class CircuitState(BaseModel):
-    """
-    Data structure representing the observed state of a quantum circuit.
+    """Data structure representing the observed state of a quantum circuit.
 
     This is equivalent to a tuple of the state of erasure checks on all qubits in the circuit (the
     `erasure` field) and the computational state of measured qubits in the same format as is
@@ -44,19 +45,58 @@ class CircuitState(BaseModel):
     model_config = ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
 
     @classmethod
-    def from_string(cls, state: str, num_qubits: int) -> Self:
+    def from_string(cls, state: str, n_qubits: int) -> Self:
+        """Construct a `CircuitState` from a binary string representation.
+
+        The string is expected to be in the format yielded by a Qiskit simulation backend. For a
+        circuit with n qubits, the string is expected to start with n qubit erasure states,
+        followed by an arbitrary number of classical measurement bits.
+
+        Args:
+            state: Binary string representing state.
+            n_qubits: Number of qubits (i.e. number of erasure checks).
+
+        Returns:
+            New `CircuitState` instance.
+        """
         state = state.replace(" ", "")
-        erasure = state[:num_qubits]
-        measure = state[num_qubits:]
+        erasure = state[:n_qubits]
+        measure = state[n_qubits:]
         return cls(erasure=erasure, measure=measure)
 
-    @model_serializer(mode="plain")
-    def serialise(self) -> str:
+    @override
+    def __str__(self) -> str:
+        """Serialise this `CircuitState` into a suitable string format.
+
+        This is designed to be more readable and compact for JSON files containing a large
+        dictionary of these states (as opposed to Pydantic's default found in `__repr__`).
+
+        Examples:
+            >>> print(CircuitState(erasure="000", measure="11"))
+            000,11
+            >>> print(repr(CircuitState(erasure="000", measure="11")))
+            CircuitState(erasure='000', measure='11')
+
+        Returns:
+            String representation.
+        """
         return f"{self.erasure},{self.measure}"
 
     @model_validator(mode="wrap")
     @classmethod
-    def deserialise(cls, value: Any, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def deserialise(cls, value: object, handler: ModelWrapValidatorHandler[Self]) -> Self:
+        """Deserialise a `CircuitState` from a JSON-suitable string.
+
+        Args:
+            value: Serialised data.
+            handler: Default Pydantic validator.
+
+        Raises:
+            ValidationError: If the input could not be deserialised.
+
+        Returns:
+            New `CircuitState` instance.
+        """
         if isinstance(value, str):
             try:
                 erasure, measure = value.split(",", 1)
@@ -67,20 +107,35 @@ class CircuitState(BaseModel):
 
 
 class ErasureModel(Protocol):
-    """
-    Protocol representing an erasure circuit simulation model.
+    """Protocol representing an erasure circuit simulation model.
 
-    Any class fulfilling this protocol may be used in `frontend.ErasureSimFrontend`.
+    Any class fulfilling this protocol may be used with `frontend.ErasureSimFrontend`.
     """
     @property
-    def circuit(self) -> QuantumCircuit: ...
+    def circuit(self) -> QuantumCircuit:
+        """Qiskit quantum circuit being simulated."""
+        ...
 
     @property
-    def n_erasable_gates(self) -> int: ...
+    def n_erasable_gates(self) -> int:
+        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
+        ...
 
-    def __init__(self, circuit: QuantumCircuit, erasure_rate: float): ...
+    def __init__(self, circuit: QuantumCircuit, erasure_rate: float):
+        """Construct a model with a Qiskit circuit and uniform erasure rate."""
+        ...
 
-    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]: ...
+    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]:
+        """Execute an erasure simulation using this model.
+
+        Args:
+            backend: Circuit simulator backend.
+            shots: Number of shots.
+
+        Returns:
+            A map of each `CircuitState` to the number of times it was observed.
+        """
+        ...
 
 
 EXEMPT_GATES = ["barrier", "measure"]
@@ -88,8 +143,7 @@ EXEMPT_GATES = ["barrier", "measure"]
 
 
 class ErasurePass(TransformationPass):
-    """
-    Transpiler pass implementing erasable qubits.
+    """Transpiler pass implementing erasable qubits.
 
     This bakes conditional gates into arbitrary quantum circuits representing qubit erasure logic.
     A classical register `ERASURE_CREG_NAME` is added, with one bit representing the Boolean erasure
@@ -112,23 +166,33 @@ class ErasurePass(TransformationPass):
     ERASER_QREG_NAME = "q_eraser"
 
     def __init__(self, erasure_before_gates: bool = False):
+        """Construct a new `ErasurePass` transpiler pass object.
+
+        Args:
+            erasure_before_gates: If true, erasures are inflicted before a gate, not after.
+        """
         self._erasure_before_gates = erasure_before_gates
         self._n_erasable_gates: int | None = None
 
         super().__init__()
 
     @property
-    def erasure_before_gates(self): return self._erasure_before_gates
+    def erasure_before_gates(self) -> bool:
+        """If true, erasures are inflicted before a gate, not after."""
+        return self._erasure_before_gates
 
     @property
-    def n_erasable_gates(self):
-        """
-        Contains n_erasable_gates for the most recent transpiler pass.
+    def n_erasable_gates(self) -> int:
+        """Contains n_erasable_gates for the most recent transpiler pass.
+
+        Raises:
+            RuntimeError: If a pass has not yet ran.
         """
         if self._n_erasable_gates is None:
             raise RuntimeError("Cannot access n_erasable_gates before running a pass.")
         return self._n_erasable_gates
 
+    @override
     def run(self, dag: DAGCircuit) -> DAGCircuit:
         # Collect all erasable quantum operations
         gates = [node for node in dag.op_nodes()
@@ -193,20 +257,28 @@ class ErasurePass(TransformationPass):
         return dag
 
 
-def get_qubit_by_name(qc: QuantumCircuit, name: str, index: int = 0) -> int:
-    """
-    Utility function returning the index of the sole/first qubit in a qreg of a given name.
+def get_qubit_by_name(qc: QuantumCircuit, name: str) -> int:
+    """Return the index of the sole/first qubit in a qreg of a given name.
+
+    Args:
+        qc: Qiskit circuit.
+        name: Quantum register name.
+
+    Raises:
+        ValueError: If no qreg could be found with the given name.
+
+    Returns:
+        Qubit index.
     """
     for qreg in qc.qregs:
         if qreg.name == name:
-            return qc.find_bit(qreg[index])[0]
+            return qc.find_bit(qreg[0])[0]
 
     raise ValueError("Could not find a qreg with the requested name.")
 
 
-def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate: float):
-    """
-    Add an erasure noise model to an `ErasurePass` circuit.
+def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate: float) -> None:
+    """Add an erasure noise model to an `ErasurePass` circuit.
 
     This model populates erasure events via Pauli noise on the `ErasurePass.ERASER_QREG_NAME` ancilla.
 
@@ -215,14 +287,18 @@ def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate:
     on explicit qubits, via a loop or otherwise.
 
     See `example_ErasurePass` for example usage.
+
+    Args:
+        noise_model: Preexisting Qiskit Aer noise model.
+        qc: Qiskit circuit (must have had `ErasurePass` applied).
+        erasure_rate: Uniform erasure rate.
     """
     error = pauli_error([("X", erasure_rate), ("I", 1 - erasure_rate)])
     noise_model.add_quantum_error(error, "measure", [get_qubit_by_name(qc, ErasurePass.ERASER_QREG_NAME)])
 
 
 class ErasurePassJob:
-    """
-    Utility class to run `ErasurePass`-based simulations.
+    """Utility class to run `ErasurePass`-based simulations.
 
     Fulfills the `ErasureModel` protocol.
     """
@@ -232,6 +308,13 @@ class ErasurePassJob:
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False
         ):
+        """Construct a model with a Qiskit circuit and uniform erasure rate.
+
+        Args:
+            circuit: Qiskit quantum circuit.
+            erasure_rate: Uniform erasure rate.
+            erasure_before_gates: If true, erasures are inflicted before a gate, not after.
+        """
         self._circuit = circuit
         self._erasure_rate = erasure_rate
         self._erasure_before_gates = erasure_before_gates
@@ -243,23 +326,32 @@ class ErasurePassJob:
         self._n_erasable_gates = ep.n_erasable_gates
 
     @property
-    def circuit(self): return self._circuit
+    def circuit(self) -> QuantumCircuit:
+        """Qiskit quantum circuit being simulated."""
+        return self._circuit
 
     @property
-    def circuit_erasure(self): return self._circuit_erasure
+    def circuit_erasure(self) -> QuantumCircuit:
+        """Copy of circuit with `ErasurePass` applied."""
+        return self._circuit_erasure
 
     @property
-    def erasure_rate(self): return self._erasure_rate
+    def erasure_rate(self) -> float:
+        """Uniform erasure rate."""
+        return self._erasure_rate
 
     @property
-    def erasure_before_gates(self): return self._erasure_before_gates
+    def erasure_before_gates(self) -> bool:
+        """If true, erasures are inflicted before a gate, not after."""
+        return self._erasure_before_gates
 
     @property
-    def n_erasable_gates(self): return self._n_erasable_gates
+    def n_erasable_gates(self) -> int:
+        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
+        return self._n_erasable_gates
 
     def run(self, backend: Backend, shots: int) -> Counter[CircuitState]:
-        """
-        Execute the simulation on a given backend for some number of shots.
+        """Execute the simulation on a given backend for some number of shots.
 
         This method temporarily replaces the backend's noise model with a copy with
         `add_erasure_noise` called on it. The original noise model is replaced at this method's
@@ -267,6 +359,16 @@ class ErasurePassJob:
 
         Note that due to the reliance on noisy simulation, only `AerSimulator` is supported as a
         backend; a `TypeError` will be raised if any other backend is given.
+
+        Args:
+            backend: Circuit simulator backend.
+            shots: Number of shots.
+
+        Raises:
+            TypeError: If the backend is not an `AerSimulator`.
+
+        Returns:
+            A map of each `CircuitState` to the number of times it was observed.
         """
         if type(backend) is not AerSimulator:
             raise TypeError("Only AerSimulator is supported for ErasurePassJob.")
@@ -287,8 +389,7 @@ class ErasurePassJob:
 
 
 class ErasureCircuitSampler(MultiprocessingRNG):
-    """
-    Custom simulation wrapper implementing erasure noise on arbitrary circuits.
+    """Custom simulation wrapper implementing erasure noise on arbitrary circuits.
 
     This class dynamically samples circuits by deleting gates based on erasure events.
     A lookup table is precomputed upon construction which provides the set of gates deleted
@@ -311,6 +412,14 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             erasure_before_gates: bool = False,
             timeout: float | None = 10.0
         ):
+        """Construct a model with a Qiskit circuit and uniform erasure rate.
+
+        Args:
+            circuit: Qiskit quantum circuit.
+            erasure_rate: Uniform erasure rate.
+            erasure_before_gates: If true, erasures are inflicted before a gate, not after.
+            timeout: Maximum time allowed per shot before forcibly terminating.
+        """
         self._circuit = circuit
         self._erasure_rate = erasure_rate
         self._erasure_before_gates = erasure_before_gates
@@ -321,29 +430,44 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         self._precompute_lut()
 
     @property
-    def circuit(self): return self._circuit
+    def circuit(self) -> QuantumCircuit:
+        """Qiskit quantum circuit being simulated."""
+        return self._circuit
 
     @property
-    def erasure_rate(self): return self._erasure_rate
+    def erasure_rate(self) -> float:
+        """Uniform erasure rate."""
+        return self._erasure_rate
 
     @property
-    def erasure_before_gates(self): return self._erasure_before_gates
+    def erasure_before_gates(self) -> bool:
+        """If true, erasures are inflicted before a gate, not after."""
+        return self._erasure_before_gates
 
     @property
-    def timeout(self): return self._timeout
+    def timeout(self) -> float | None:
+        """Maximum time allowed per shot before forcibly terminating."""
+        return self._timeout
 
-    def n_gates(self):
+    def n_gates(self) -> int:
+        """Total number of gates in the circuit."""
         return len(self.circuit.data)
 
-    def erasable_gates(self):
+    def erasable_gates(self) -> Generator[tuple[int, CircuitInstruction], None, None]:
+        """Iterate through all erasable gates in the circuit.
+
+        Yields:
+            tuple[int,CircuitInstruction]: Index and instruction for each erasable gate.
+        """
         return ((i, g) for i, g in enumerate(self.circuit.data)
                 if g.name not in EXEMPT_GATES)
 
     @property
-    def n_erasable_gates(self):
+    def n_erasable_gates(self) -> int:
+        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
         return len(list(self.erasable_gates()))
 
-    def _precompute_lut(self):
+    def _precompute_lut(self) -> None:
         """Generate map of erasable gate index to list of gates to erase."""
         self._lut: dict[int, list[int]] = {}
         for i, gate in self.erasable_gates():
@@ -358,13 +482,19 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             self,
             erasure_events: npt.NDArray[np.int64] | None = None
         ) -> tuple[QuantumCircuit, npt.NDArray[np.int64], set[Qubit]]:
-        """
-        Sample the circuit, i.e. delete gates based on erasure events.
+        """Sample the circuit, i.e. delete gates based on erasure events.
 
-        If erasure events (a Boolean flag for each qubit) are not provided, they are sampled
-        as a Bernoulli distribution from the specified `erasure_rate`.
+        If erasure events (a Boolean flag for each gate in the circuit) are not provided, they are
+        sampled as a Bernoulli distribution from the specified `erasure_rate`.
 
-        Returns a tuple of the sampled circuit, erasure events and set of erased qubits.
+        Args:
+            erasure_events: Binary vector dictating if an erasure occurred on each gate.
+
+        Raises:
+            ValueError: If the length of `erasure_events` does not equal `self.n_gates()`.
+
+        Returns:
+            Tuple of the sampled circuit, erasure events and set of erased qubits.
         """
         if erasure_events is None:
             erasure_events = self._rng.binomial(1, self.erasure_rate, self.n_gates())
@@ -396,8 +526,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             shots: int,
             multiprocess: bool = True
         ) -> Counter[CircuitState]:
-        """
-        Execute the simulation on a given backend for some number of shots.
+        """Execute the simulation on a given backend for some number of shots.
 
         As this is CPU-bound in the `sample` method, multiprocessing is used to parallelise the
         workload for considerable speedup. This can be disabled with the `multiprocess` parameter.
@@ -406,6 +535,17 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         (default: 10 seconds) to complete, the child will kill itself. This will manifest as either
         a `TimeoutError` or `BrokenProcessPool` exception. To disable this timeout completely, set
         `timeout` to None.
+
+        Args:
+            backend: Circuit simulator backend.
+            shots: Number of shots.
+            multiprocess: If true, parallelise the workload over multiple processes.
+
+        Raises:
+            RuntimeError: If the resultant number of shots does not equal the `shots` argument.
+
+        Returns:
+            A map of each `CircuitState` to the number of times it was observed.
         """
         if multiprocess:
             # Invoke _run on multiple processes on subsets of the problem
