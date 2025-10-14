@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from collections import Counter
 
 
-class ErasureSimFrontendResults(BaseModel):
+class ErasureSimResults(BaseModel):
     """Data structure of the results from an `ErasureSimFrontend` run."""
     counts: Counter[CircuitState]
     shots: int
@@ -110,7 +110,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
                     for state, count in counts.items()
                     if state.erasure != "0"*self.num_qubits))
 
-    def run(self, backend: Backend, shots: int, postselect: bool = False) -> ErasureSimFrontendResults:
+    def run(self, backend: Backend, shots: int, postselect: bool = False) -> ErasureSimResults:
         """Execute the simulation on a given backend for some number of shots.
 
         This uses the `run` method on the `model` to generate the target number of shots.
@@ -145,7 +145,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
         if total_shots - n_rejected != shots:
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
-        return ErasureSimFrontendResults(
+        return ErasureSimResults(
             counts=counts,
             shots=total_shots,
             n_rejected=n_rejected,

@@ -1,5 +1,5 @@
 from erado.models import ErasureModel, ErasurePassJob, ErasureCircuitSampler
-from erado.frontend import ErasureSimFrontend, ErasureSimFrontendResults
+from erado.frontend import ErasureSimFrontend, ErasureSimResults
 from erado.circuits import ghz_circuit
 
 from qiskit import ClassicalRegister
@@ -29,7 +29,7 @@ def test_measure_EOL_all(model_type: type[ErasureModel]):
     frontend = ErasureSimFrontend(model=model)
     results = frontend.run(backend, shots)
 
-    assert isinstance(results, ErasureSimFrontendResults)
+    assert isinstance(results, ErasureSimResults)
     assert results.shots == shots
     assert results.counts.total() == shots
 
@@ -52,7 +52,7 @@ def test_measure_EOL_some(model_type: type[ErasureModel]):
     frontend = ErasureSimFrontend(model=model)
     results = frontend.run(backend, shots)
 
-    assert isinstance(results, ErasureSimFrontendResults)
+    assert isinstance(results, ErasureSimResults)
     assert results.shots == shots
     assert results.counts.total() == shots
 

@@ -1,5 +1,5 @@
 from erado.models import ErasureCircuitSampler, ErasurePassJob
-from erado.frontend import ErasureSimFrontend, ErasureSimFrontendResults
+from erado.frontend import ErasureSimFrontend, ErasureSimResults
 
 from qiskit import generate_preset_pass_manager
 from qiskit.synthesis import synth_qft_line
@@ -130,7 +130,7 @@ def example_QFT_sweep(plot_error_bars=True):
         filepath = Path(f"qft_sweep_n{n}.json")
         if filepath.is_file():
             with open(filepath, "rb") as file:
-                results = ErasureSimFrontendResults.model_validate_json(file.read())
+                results = ErasureSimResults.model_validate_json(file.read())
         else:
             results, time = run_simulation(noise_params, n)
             with open(filepath, "w") as file:
@@ -207,7 +207,7 @@ def plot_ideal_v_noisy(plot_error_bars=True):
     for i, n in enumerate(num_qubits):
         filepath = Path("ideal") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
-            results = ErasureSimFrontendResults.model_validate_json(file.read())
+            results = ErasureSimResults.model_validate_json(file.read())
 
         circuit_depth[i] = results.circuit_depth
         n_erasable_gates[i] = results.n_erasable_gates
@@ -223,7 +223,7 @@ def plot_ideal_v_noisy(plot_error_bars=True):
     for i, n in enumerate(num_qubits):
         filepath = Path("noisy") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
-            results = ErasureSimFrontendResults.model_validate_json(file.read())
+            results = ErasureSimResults.model_validate_json(file.read())
 
         test = binomtest(results.n_rejected, results.shots)
         rejection_rate_noisy[i] = test.statistic  # this is just k/n, i.e. results.rejection_rate

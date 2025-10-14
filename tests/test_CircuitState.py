@@ -10,7 +10,7 @@ N = 5
 def test_serialise_str():
     """String representation should be the readable and compact version.
 
-    This is invoked when serialising JSON from container objects, e.g. `ErasureSimFrontendResults`.
+    This is invoked when serialising JSON from container objects, e.g. `ErasureSimResults`.
     """
     state = CircuitState(erasure="0"*N, measure="1"*N)
     state_str = str(state)
