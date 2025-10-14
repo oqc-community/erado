@@ -56,13 +56,14 @@ typeCheckingMode = "standard"
 
 [tool.ruff.lint]
 ignore = [
-    "ALL",  # Strictly opt-in to ruff functionality below
+    "ALL",     # Strictly opt-in to ruff functionality below
     "ANN204",  # Don't require return types on 'special' methods
 ]
 select = [
-    "D",  # Enable pydocstyle rules
-    "D401",  # Docstrings must have imperative mood
-    "ANN",  # Type annotations are mandatory
+    "D",       # Enable pydocstyle rules
+    "D401",    # Docstrings must have imperative mood
+    "ANN",     # Type annotations are mandatory
+    "F",       # Enable Pyflakes rules (common code errors e.g. unused imports)
 ]
 
 [tool.ruff.lint.pydocstyle]
