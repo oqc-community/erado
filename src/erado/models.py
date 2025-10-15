@@ -3,8 +3,7 @@
 from erado.util import MultiprocessingRNG
 
 from qiskit import QuantumCircuit
-from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit
-from qiskit._accelerate.circuit import CircuitInstruction  # TODO: try to create stub (and for qubit/registers?)
+from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit, CircuitInstruction
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.dagcircuit import DAGCircuit
@@ -216,8 +215,8 @@ class ErasurePass(TransformationPass):
             erasure_cargs = [erasure_creg[dag.find_bit(qarg)[0]] for qarg in node.qargs]
             eraser_circuit = QuantumCircuit(erasure_qreg, ClassicalRegister(bits=erasure_cargs))
             for carg in erasure_cargs:
-                eraser_circuit.append(Measure(), erasure_qreg, [carg])  # This 0 state is flipped pre-measurement by the noise channel
-                eraser_circuit.append(Reset(), erasure_qreg)
+                eraser_circuit.append(Measure(), [erasure_qreg], [carg])  # This 0 state is flipped pre-measurement by the noise channel
+                eraser_circuit.append(Reset(), [erasure_qreg])
 
             # Instantiate mini-DAG and attach mini-registers
             mini_dag = DAGCircuit()
