@@ -1,11 +1,41 @@
-import qiskit._accelerate.circuit as my_package
+"""Simple CLI to generate a .pyi stub file from an extension module.
+
+The stub definitions WILL include:
+- All classes defined in the module.
+- Immediate ancestors of each class in the inheritance list.
+- All method descriptors in classes (with some exceptions).
+- All data descriptors, i.e. getsets (`PyGetSetDef`) and members (`PyMemberDef`).
+- Plain-old attributes (also a catch-all) ONLY if they do not simply evaluate to `None`.
+  - These will have a deduced type annotation.
+- Docstrings (where present in the extension module).
+- Type annotations for methods ONLY if they are defined in the module.
+
+The stub definitions WILL NOT include:
+- Other module-level objects (functions etc.)
+- Methods which are:
+  - Recognised as built-in.
+  - Explicitly ignored in `EXEMPT_MEMBERS`.
+- Deduced parameter/return type annotations for functions.
+- Deduced type annotations for data descriptors.
+
+In addition, an `__iter__` stub will be added to classes which are old-style iterables, i.e.
+classes which define `__getitem__` and `__len__` but not `__iter__`. This allows these classes
+to be used as an `Iterable` by type checkers. This behaviour can be disabled in order to be more
+honest with the source material.
+"""
 
 import inspect
-from io import TextIOWrapper
 import re
+import argparse
+from importlib import import_module
+from io import TextIOWrapper
+from pathlib import Path
+from types import ModuleType
 
-# TODO: command line argument for package/module, output file
-# TODO: extract __init__ signature from doc header maybe?
+
+# TODO: print module __doc__ at top
+# TODO: print comment explaining generated stub with package version
+# TODO: extract __init__ signature from doc header maybe? (not important rn)
 
 
 class FileWriter:
@@ -24,26 +54,31 @@ class FileWriter:
         self._level -= 1
 
     def write(self, s: str):
+        # Remove any backslashes which do not form a valid escape sequence
         s_sanitised = s.replace("\\", "")
 
+        # Count the number of line breaks in the string
         n_line_breaks = s_sanitised.count("\n")
 
+        # If the string is ONLY line breaks, just print it now
         if len(s_sanitised) == n_line_breaks:
             self.out.write(s_sanitised)
+        # Else, add correct indentation
         else:
             indentation = self._indent_str() * self._level
 
-            # First add indentation to beginning
+            # First add indentation to beginning of string
             s_indented = indentation + s_sanitised
 
-            # Add indentation after any line breaks (except the last)
+            # Add indentation after any line breaks (except the last one)
+            # TODO: Change to all, but then remove from very end if it was put there
             s_indented = s_indented.replace(
                 "\n",
                 "\n" + indentation,
                 n_line_breaks - 1
             )
 
-            # Remove unnecessary indentation from empty lines
+            # Remove unnecessary indentation from empty intermediate lines
             processing = True
             while processing:
                 s_indented, count = re.subn(
@@ -64,75 +99,109 @@ EXEMPT_MEMBERS: list[str] = [
     "__doc__",
     "__module__",
     "__class__",
-    "__new__",
 ]
 
 
-with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as file:
-    f = FileWriter(file)
+def make_stub_file(module: ModuleType, output_file: Path, debug: bool = False, mock_iter: bool = True) -> None:
+    with open(output_file, "w") as file:
+        f = FileWriter(file)
 
-    f.write("from _typeshed import Incomplete\n")
+        f.write("from _typeshed import Incomplete\n")
 
-    for name, obj in inspect.getmembers(my_package):
-        if inspect.isclass(obj):
-            f.write("\n\n")
-            bases = obj.__bases__
+        for cls_name, cls in inspect.getmembers(module):
+            if inspect.isclass(cls):
+                f.write("\n\n")
+                bases = cls.__bases__
 
-            if len(bases) == 1 and bases[0] == object:
-                f.write(f"class {name}:\n")
-            else:
-                f.write(f"class {name}(")
-                for cls in bases:
-                    f.write(cls.__name__)
-                f.write("):\n")
+                if len(bases) == 1 and bases[0] == object:
+                    f.write(f"class {cls_name}:\n")
+                else:
+                    f.write(f"class {cls_name}(")
+                    for base in bases:
+                        f.write(base.__name__)
+                    f.write("):\n")
 
-            f.indent()
-            f.write(f"\"\"\"{obj.__doc__}\"\"\"\n")
+                f.indent()
+                f.write(f"\"\"\"{cls.__doc__}\"\"\"\n")
 
-            for member_name, member in inspect.getmembers(obj):
-                if member_name not in EXEMPT_MEMBERS:
-                    # Skip built-ins
-                    if inspect.isbuiltin(member):
-                        continue
+                for member_name, member in inspect.getmembers(cls):
+                    if member_name not in EXEMPT_MEMBERS:
+                        # Skip built-ins
+                        if inspect.isbuiltin(member):
+                            continue
 
-                    f.write("\n")
+                        f.write("\n")
 
-                    # Methods
-                    if inspect.ismethoddescriptor(member):
-                        f.write(f"def {member_name}{inspect.signature(member)}:\n")
+                        # Methods
+                        if inspect.ismethoddescriptor(member):
+                            f.write(f"def {member_name}{inspect.signature(member)}:\n")
+                            f.indent()
+                            if member.__doc__ is not None and member.__doc__ != "":
+                                f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
+                            f.write("...\n")
+                            f.dedent()
+
+                        # Data descriptor
+                        elif inspect.isdatadescriptor(member):
+                            f.write(f"{member_name}: Incomplete  # DATA DESCRIPTOR\n")
+                            if member.__doc__ is not None and member.__doc__ != "":
+                                f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
+
+                        # Plain-old attribute
+                        else:
+                            if member is not None:
+                                f.write(f"{member_name}: {type(member).__name__}\n")
+
+                        if debug:
+                            f.write(f"# ismethoddescriptor = {inspect.ismethoddescriptor(member)}\n")
+                            f.write(f"# ismethod = {inspect.ismethod(member)}\n")
+                            f.write(f"# isfunction = {inspect.isfunction(member)}\n")
+                            f.write(f"# isbuiltin = {inspect.isbuiltin(member)}\n")
+                            f.write(f"# isdatadescriptor = {inspect.isdatadescriptor(member)}\n")
+                            f.write(f"# isgetsetdescriptor = {inspect.isgetsetdescriptor(member)}\n")
+                            f.write(f"# ismemberdescriptor = {inspect.ismemberdescriptor(member)}\n")
+                            f.write(f"# isclass = {inspect.isclass(member)}\n")
+
+                if mock_iter:
+                    names: list[str] = [tup[0] for tup in inspect.getmembers(cls)]
+                    if "__getitem__" in names and "__iter__" not in names:
+                        f.write("\n")
+                        f.write("def __iter__(self):\n")
                         f.indent()
-                        if member.__doc__ is not None and member.__doc__ != "":
-                            f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
+                        f.write("\"\"\"make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!\"\"\"\n")
                         f.write("...\n")
                         f.dedent()
 
-                    # Data descriptor
-                    elif inspect.isdatadescriptor(member):
-                        f.write(f"{member_name}: Incomplete  # DATA DESCRIPTOR\n")
-                        if member.__doc__ is not None and member.__doc__ != "":
-                            f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
-
-                    # Plain-old attribute
-                    else:
-                        if member is not None:
-                            f.write(f"{member_name}: {type(member).__name__}\n")
-
-                    # f.write(f"# ismethoddescriptor = {inspect.ismethoddescriptor(member)}\n")
-                    # f.write(f"# ismethod = {inspect.ismethod(member)}\n")
-                    # f.write(f"# isfunction = {inspect.isfunction(member)}\n")
-                    # f.write(f"# isbuiltin = {inspect.isbuiltin(member)}\n")
-                    # f.write(f"# isdatadescriptor = {inspect.isdatadescriptor(member)}\n")
-                    # f.write(f"# isgetsetdescriptor = {inspect.isgetsetdescriptor(member)}\n")
-                    # f.write(f"# ismemberdescriptor = {inspect.ismemberdescriptor(member)}\n")
-                    # f.write(f"# isclass = {inspect.isclass(member)}\n")
-
-            names: list[str] = [tup[0] for tup in inspect.getmembers(obj)]
-            if "__getitem__" in names and "__iter__" not in names:
-                f.write("\n")
-                f.write("def __iter__(self):\n")
-                f.indent()
-                f.write("\"\"\"MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!\"\"\"\n")
-                f.write("...\n")
                 f.dedent()
 
-            f.dedent()
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="make_stubs",
+        description="Generate a .pyi stub file from an extension module"
+    )
+
+    parser.add_argument("module", help="full name of extension module")
+    parser.add_argument("output", help="root directory for output files")
+    parser.add_argument("-d", "--debug", action="store_true", help="enable verbose debug comments in output")
+    parser.add_argument("--no-iter", action="store_true", help="disable mocking __iter__ on old-style iterables")
+
+    args = parser.parse_args()
+
+    module = import_module(args.module)
+
+    root_dir = Path(args.output)
+    module_tree = str(args.module).split(".")
+
+    output_file = root_dir
+    for name in module_tree[:-1]:
+        output_file /= name
+
+    output_file /= (module_tree[-1] + ".pyi")
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    make_stub_file(module, output_file, args.debug, not args.no_iter)
+
+
+if __name__ == "__main__":
+    main()

@@ -205,7 +205,7 @@ class AncillaRegister(QuantumRegister):
     """The size of the register."""
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -1116,7 +1116,7 @@ class CircuitData:
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -1415,7 +1415,7 @@ class ClassicalRegister(Register):
     """The size of the register."""
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3221,7 +3221,7 @@ class Duration_dt(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3338,7 +3338,7 @@ class Duration_ms(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3455,7 +3455,7 @@ class Duration_ns(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3572,7 +3572,7 @@ class Duration_ps(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3689,7 +3689,7 @@ class Duration_s(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -3806,7 +3806,7 @@ class Duration_us(Duration):
         ...
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
@@ -5084,7 +5084,7 @@ class QuantumRegister(Register):
     """The size of the register."""
 
     def __iter__(self):
-        """MOCKED TO MAKE THIS AN OLD-STYLE ITERABLE!"""
+        """make_stubs: MOCKED TO REGISTER THIS CLASS AS AN OLD-STYLE ITERABLE!"""
         ...
 
 
