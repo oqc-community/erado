@@ -65,12 +65,10 @@ class FileWriter:
             # First add indentation to beginning of string
             s_indented = indentation + s_sanitised
 
-            # Add indentation after any line breaks (except the last one)
-            # TODO: Change to all, but then remove from very end if it was put there
+            # Add indentation after all line breaks
             s_indented = s_indented.replace(
                 "\n",
                 "\n" + indentation,
-                n_line_breaks - 1
             )
 
             # Remove unnecessary indentation from empty intermediate lines
@@ -82,6 +80,10 @@ class FileWriter:
                     s_indented
                 )
                 processing = count != 0
+
+            # Remove unnecessary indentation from end of string, if present
+            if len(s_indented) >= len(indentation) and s_indented[-len(indentation):] == indentation:
+                s_indented = s_indented[:-len(indentation)]
 
             self.out.write(s_indented)
 
