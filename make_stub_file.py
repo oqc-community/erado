@@ -2,9 +2,9 @@ import qiskit._accelerate.circuit as my_package
 
 import inspect
 from io import TextIOWrapper
+import re
 
 # TODO: command line argument for package/module, output file
-# TODO: file writer state machine with indentation
 # TODO: extract __init__ signature from doc header maybe?
 
 
@@ -25,10 +25,34 @@ class FileWriter:
 
     def write(self, s: str):
         s_sanitised = s.replace("\\", "")
-        if s_sanitised == "\n":
+
+        n_line_breaks = s_sanitised.count("\n")
+
+        if len(s_sanitised) == n_line_breaks:
             self.out.write(s_sanitised)
         else:
-            s_indented = (self._indent_str() * self._level) + s_sanitised
+            indentation = self._indent_str() * self._level
+
+            # First add indentation to beginning
+            s_indented = indentation + s_sanitised
+
+            # Add indentation after any line breaks (except the last)
+            s_indented = s_indented.replace(
+                "\n",
+                "\n" + indentation,
+                n_line_breaks - 1
+            )
+
+            # Remove unnecessary indentation from empty lines
+            processing = True
+            while processing:
+                s_indented, count = re.subn(
+                    r"\n +\n",
+                    "\n\n",
+                    s_indented
+                )
+                processing = count != 0
+
             self.out.write(s_indented)
 
     @classmethod
@@ -77,7 +101,7 @@ with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as file:
                     if inspect.ismethoddescriptor(member):
                         f.write(f"def {member_name}{inspect.signature(member)}:\n")
                         f.indent()
-                        if member.__doc__ != "":
+                        if member.__doc__ is not None and member.__doc__ != "":
                             f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
                         f.write("...\n")
                         f.dedent()
@@ -85,7 +109,7 @@ with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as file:
                     # Data descriptor
                     elif inspect.isdatadescriptor(member):
                         f.write(f"{member_name}: Incomplete  # DATA DESCRIPTOR\n")
-                        if member.__doc__ != "":
+                        if member.__doc__ is not None and member.__doc__ != "":
                             f.write(f"\"\"\"{member.__doc__}\"\"\"\n")
 
                     # Plain-old attribute
