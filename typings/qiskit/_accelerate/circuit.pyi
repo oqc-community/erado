@@ -460,7 +460,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -611,7 +610,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -1215,7 +1213,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -1585,7 +1582,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3096,7 +3092,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3205,7 +3200,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3324,7 +3318,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3443,7 +3436,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3562,7 +3554,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3681,7 +3672,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -3800,7 +3790,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""
@@ -5635,7 +5624,6 @@ Return str(self) if format_spec is empty. Raise TypeError otherwise."""
         """Return self>value."""
         ...
 
-    __hash__: NoneType
 
     def __init__(self, /, *args, **kwargs):
         """Initialize self.  See help(type(self)) for accurate signature."""

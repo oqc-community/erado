@@ -54,7 +54,8 @@ with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as f:
 
                     # Plain-old attribute
                     else:
-                        f.write(f"    {member_name}: {type(member).__name__}\n")
+                        if member is not None:
+                            f.write(f"    {member_name}: {type(member).__name__}\n")
 
                     # f.write(f"# ismethoddescriptor = {inspect.ismethoddescriptor(member)}\n")
                     # f.write(f"# ismethod = {inspect.ismethod(member)}\n")
