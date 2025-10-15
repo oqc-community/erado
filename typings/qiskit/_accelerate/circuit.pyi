@@ -1752,7 +1752,7 @@ Args:
         ...
 
     def ancestors(self, /, node):
-        """Returns set of the ancestors of a node as :class:`.DAGOpNode`\ s and :class:`.DAGInNode`\ s.
+        """Returns set of the ancestors of a node as :class:`.DAGOpNode` s and :class:`.DAGInNode` s.
 
 The ancestors are the set of all nodes that can reach the target node. Whereas the
 :meth:`.DAGCircuit.predecessors` only contains the immediate predecessors, the ancestors
@@ -1768,7 +1768,7 @@ Args:
     cargs (tuple[Clbit]): cbits that op will be applied to
     check (bool): If ``True`` (default), this function will enforce that the
         :class:`.DAGCircuit` data-structure invariants are maintained (all ``qargs`` are
-        :class:`~.circuit.Qubit`\\ s, all are in the DAG, etc).  If ``False``, the caller *must*
+        :class:`~.circuit.Qubit` s, all are in the DAG, etc).  If ``False``, the caller *must*
         uphold these invariants itself, but the cost of several checks will be skipped.
         This is most useful when building a new DAG from a source of known-good nodes.
 Returns:
@@ -1787,7 +1787,7 @@ Args:
     cargs (tuple[Clbit]): cbits that op will be applied to
     check (bool): If ``True`` (default), this function will enforce that the
         :class:`.DAGCircuit` data-structure invariants are maintained (all ``qargs`` are
-        :class:`~.circuit.Qubit`\\ s, all are in the DAG, etc).  If ``False``, the caller *must*
+        :class:`~.circuit.Qubit` s, all are in the DAG, etc).  If ``False``, the caller *must*
         uphold these invariants itself, but the cost of several checks will be skipped.
         This is most useful when building a new DAG from a source of known-good nodes.
 Returns:
@@ -1944,7 +1944,7 @@ Raises:
         ...
 
     def descendants(self, /, node):
-        """Returns set of the descendants of a node as :class:`.DAGOpNode`\ s and :class:`.DAGOutNode`\ s.
+        """Returns set of the descendants of a node as :class:`.DAGOpNode` s and :class:`.DAGOutNode` s.
 
 The descendants are the set of all nodes that can be reached from the target node. In
 comparison, :meth:`.DAGCircuit.successors` is an iterator over the immediate successors,
@@ -2262,8 +2262,8 @@ Returns:
     output_map: Incomplete  # DATA DESCRIPTOR
 
     def predecessors(self, /, node):
-        """Returns iterator of the predecessors of a node as :class:`.DAGOpNode`\ s and
-:class:`.DAGInNode`\ s."""
+        """Returns iterator of the predecessors of a node as :class:`.DAGOpNode` s and
+:class:`.DAGInNode` s."""
         ...
 
     def properties(self, /):
@@ -2561,8 +2561,8 @@ Raises:
         ...
 
     def successors(self, /, node):
-        """Returns iterator of the successors of a node as :class:`.DAGOpNode`\ s and
-:class:`.DAGOutNode`\ s."""
+        """Returns iterator of the successors of a node as :class:`.DAGOpNode` s and
+:class:`.DAGOutNode` s."""
         ...
 
     def swap_nodes(self, /, node1, node2):
@@ -4093,7 +4093,7 @@ class Parameter(ParameterExpression):
     """A compile-time symbolic parameter.
 
 The value of a :class:`.Parameter` must be entirely determined before a circuit begins execution.
-Typically this will mean that you should supply values for all :class:`.Parameter`\ s in a
+Typically this will mean that you should supply values for all :class:`.Parameter` s in a
 circuit using :meth:`.QuantumCircuit.assign_parameters`, though certain hardware vendors may
 allow you to give them a circuit in terms of these parameters, provided you also pass the values
 separately.
@@ -4612,7 +4612,7 @@ Args:
     parameter_values: Mapping of :class:`.Parameter` instances to the numeric value to which
         they will be bound.
     allow_unknown_parameters: If ``False``, raises an error if ``parameter_values``
-        contains :class:`.Parameter`\ s in the keys outside those present in the expression.
+        contains :class:`.Parameter` s in the keys outside those present in the expression.
         If ``True``, any such parameters are simply ignored.
 
 Raises:
@@ -4721,10 +4721,10 @@ Args:
         """Returns a new expression with replacement parameters.
 
 Args:
-    parameter_map: Mapping from :class:`.Parameter`\ s in ``self`` to the
+    parameter_map: Mapping from :class:`.Parameter` s in ``self`` to the
         :class:`.ParameterExpression` instances with which they should be replaced.
     allow_unknown_parameters: If ``False``, raises an error if ``parameter_map``
-        contains :class:`.Parameter`\ s in the keys outside those present in the expression.
+        contains :class:`.Parameter` s in the keys outside those present in the expression.
         If ``True``, any such parameters are simply ignored.
 
 Raises:

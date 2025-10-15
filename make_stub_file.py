@@ -1,10 +1,21 @@
 import qiskit._accelerate.circuit as my_package
 
 import inspect
+from io import TextIOWrapper
 
 # TODO: command line argument for package/module, output file
 # TODO: file writer state machine with indentation
 # TODO: extract __init__ signature from doc header maybe?
+
+
+class FileWriter:
+    def __init__(self, out: TextIOWrapper):
+        self.out = out
+
+    def write(self, s: str):
+        s_sanitised = s.replace("\\", "")
+        self.out.write(s_sanitised)
+
 
 EXEMPT_MEMBERS: list[str] = [
     "__doc__",
@@ -13,7 +24,10 @@ EXEMPT_MEMBERS: list[str] = [
     "__new__",
 ]
 
-with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as f:
+
+with open('typings/qiskit/_accelerate/circuit.pyi', 'w') as file:
+    f = FileWriter(file)
+
     f.write("from _typeshed import Incomplete\n")
 
     for name, obj in inspect.getmembers(my_package):
