@@ -14,6 +14,13 @@ Latin verb; *third conjugation*
 GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
 
 ## Installation
+### Published package
+This package is published to our internal PyPI (https://pypi.int.oqc.app/simple/) and so, assuming you have access to this source, you can install the latest version thus:
+```shell
+pip install erado -i https://pypi.int.oqc.app/simple
+```
+or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using Poetry).
+
 ### From source (Poetry)
 To ensure that conditional dependencies work properly, you may need to run the following configuration step once on your system (this depends on your Poetry version: it was [introduced in 2.0.0](https://python-poetry.org/docs/configuration/#installerre-resolve) and is [likely to become the default in future Poetry versions](https://python-poetry.org/docs/dependency-specification/#exclusive-extras)):
 
