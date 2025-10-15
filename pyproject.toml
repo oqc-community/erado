@@ -44,10 +44,11 @@ style = "pep440"
 
 
 [tool.poe.tasks]
-types = "pyright src/erado"
+types = "pyright src"
 pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
 lint = "ruff check src/erado"
+stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
 
 
 [tool.pyright]
