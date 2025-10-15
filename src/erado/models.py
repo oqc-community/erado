@@ -1,6 +1,6 @@
 """Provides the underlying erasure simulation models."""
 
-from erado.util import MultiprocessingRNG
+from erado.util import MultiprocessingRNG, NPVector
 
 from qiskit import QuantumCircuit
 from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit, CircuitInstruction
@@ -13,7 +13,6 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, pauli_error
 
 import numpy as np
-import numpy.typing as npt
 
 from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_validator, ValidationError
 
@@ -479,8 +478,8 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def sample(
             self,
-            erasure_events: npt.NDArray[np.int64] | None = None
-        ) -> tuple[QuantumCircuit, npt.NDArray[np.int64], set[Qubit]]:
+            erasure_events: NPVector[np.int64] | None = None
+        ) -> tuple[QuantumCircuit, NPVector[np.int64], set[Qubit]]:
         """Sample the circuit, i.e. delete gates based on erasure events.
 
         If erasure events (a Boolean flag for each gate in the circuit) are not provided, they are

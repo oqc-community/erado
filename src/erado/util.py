@@ -5,6 +5,16 @@ import numpy as np
 import multiprocessing
 
 
+type NPVector[T: np.generic] = np.ndarray[tuple[int], np.dtype[T]]
+"""1-dimensional NumPy array of a given type."""
+
+type NPMatrix[T: np.generic] = np.ndarray[tuple[int, int], np.dtype[T]]
+"""2-dimensional NumPy array of a given type."""
+
+type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
+"""N-dimensional NumPy array of a given type."""
+
+
 class MultiprocessingRNG:
     """Mixin class providing a NumPy random number generator (RNG) suitable for multiprocessing.
 
