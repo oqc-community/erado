@@ -1,0 +1,31 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  build-and-publish:
+    runs-on:
+      group: gha-oqc-tech
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: ./.github/actions/init
+
+      - name: Configure Poetry with internal PyPI
+        run: |
+          poetry config repositories.repo ${{ vars.INTERNAL_PYPI_URL }}
+          poetry config http-basic.repo ${{ secrets.INTERNAL_PYPI_USERNAME }} ${{ secrets.INTERNAL_PYPI_PASSWORD }}
+
+      - name: Build and publish to internal PyPI
+        run: |
+          poetry publish --repository repo --build
