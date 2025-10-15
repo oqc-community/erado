@@ -576,7 +576,11 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             for _ in range(shots):
                 circuit, _, erased_qubits = self.sample()
 
-                future = executor.submit(lambda: backend.run(circuit, shots=1, seed_simulator=self._rng.integers(2**32)).result())  # type: ignore
+                future = executor.submit(lambda: backend.run(
+                        circuit,
+                        shots=1,
+                        seed_simulator=self._rng.integers(2**32)
+                    ).result())  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
                 _, not_done = wait((future,), timeout=self.timeout)
 
                 # If timed out, cleanly throw/kill based on the status of this process
