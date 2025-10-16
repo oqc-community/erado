@@ -1,5 +1,6 @@
 from erado.models import ErasureCircuitSampler, ErasurePassJob
 from erado.frontend import ErasureSimFrontend, ErasureSimResults
+from erado.util import get_series
 
 from qiskit import generate_preset_pass_manager
 from qiskit.synthesis import synth_qft_line
@@ -15,7 +16,6 @@ from matplotlib.axes import Axes
 
 from dataclasses import dataclass
 import time
-import pickle
 from pathlib import Path
 import csv
 
@@ -110,12 +110,8 @@ def example_QFT_sweep(plot_error_bars=True):
     )
 
     num_qubits = np.array(range(2, 17))
-    rejection_rate = np.zeros(len(num_qubits))
-    circuit_depth = np.zeros(len(num_qubits), dtype=int)
-    n_erasable_gates = np.zeros(len(num_qubits), dtype=int)
-
+    results_list = list[ErasureSimResults]()
     simulation_time = np.zeros(len(num_qubits))
-
     intervals = np.zeros((2, len(num_qubits)))
 
     log_i = 0
@@ -141,12 +137,14 @@ def example_QFT_sweep(plot_error_bars=True):
                 log_writer.writerow(num_qubits)
                 log_writer.writerow(simulation_time)
 
-        circuit_depth[i] = results.circuit_depth
-        n_erasable_gates[i] = results.n_erasable_gates
+        results_list.append(results)
 
         test = binomtest(results.n_rejected, results.shots)
-        rejection_rate[i] = test.statistic  # this is just k/n, i.e. results.rejection_rate
         intervals[0, i], intervals[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+
+    rejection_rate = get_series(results_list, "rejection_rate")
+    circuit_depth = get_series(results_list, "circuit_depth")
+    n_erasable_gates = get_series(results_list, "n_erasable_gates")
 
     if plot_error_bars:
         yerr = np.apply_along_axis(lambda row: np.abs(row - rejection_rate), 1, intervals)
@@ -198,36 +196,38 @@ def example_QFT_sweep(plot_error_bars=True):
 def plot_ideal_v_noisy(plot_error_bars=True):
     num_qubits = np.array(range(2, 17))
 
-    circuit_depth = np.zeros(len(num_qubits), dtype=int)
-    n_erasable_gates = np.zeros(len(num_qubits), dtype=int)
-
     # Load ideal data
-    rejection_rate_ideal = np.zeros(len(num_qubits))
+    results_list_ideal = list[ErasureSimResults]()
     intervals_ideal = np.zeros((2, len(num_qubits)))
     for i, n in enumerate(num_qubits):
         filepath = Path("ideal") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
             results = ErasureSimResults.model_validate_json(file.read())
 
-        circuit_depth[i] = results.circuit_depth
-        n_erasable_gates[i] = results.n_erasable_gates
+        results_list_ideal.append(results)
 
         test = binomtest(results.n_rejected, results.shots)
-        rejection_rate_ideal[i] = test.statistic  # this is just k/n, i.e. results.rejection_rate
         intervals_ideal[0, i], intervals_ideal[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+
+    rejection_rate_ideal = get_series(results_list_ideal, "rejection_rate")
+    circuit_depth = get_series(results_list_ideal, "circuit_depth")
+    n_erasable_gates = get_series(results_list_ideal, "n_erasable_gates")
 
     # Load noisy data
     # (assumes circuit_depth and n_erasable_gates are the same)
-    rejection_rate_noisy = np.zeros(len(num_qubits))
+    results_list_noisy = list[ErasureSimResults]()
     intervals_noisy = np.zeros((2, len(num_qubits)))
     for i, n in enumerate(num_qubits):
         filepath = Path("noisy") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
             results = ErasureSimResults.model_validate_json(file.read())
 
+        results_list_noisy.append(results)
+
         test = binomtest(results.n_rejected, results.shots)
-        rejection_rate_noisy[i] = test.statistic  # this is just k/n, i.e. results.rejection_rate
         intervals_noisy[0, i], intervals_noisy[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+
+    rejection_rate_noisy = get_series(results_list_noisy, "rejection_rate")
 
     if plot_error_bars:
         yerr_ideal = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_ideal), 1, intervals_ideal)

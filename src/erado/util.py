@@ -1,8 +1,10 @@
 """Miscellaneous utilities used across the erado library."""
 
 import numpy as np
+from pydantic import BaseModel
 
 import multiprocessing
+from collections.abc import Iterable
 
 
 type NPVector[T: np.generic] = np.ndarray[tuple[int], np.dtype[T]]
@@ -13,6 +15,25 @@ type NPMatrix[T: np.generic] = np.ndarray[tuple[int, int], np.dtype[T]]
 
 type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
 """N-dimensional NumPy array of a given type."""
+
+
+def get_series(models: Iterable[BaseModel], field: str) -> NPVector:
+    """Make a data series from a collection of Pydantic models.
+
+    Args:
+        models: Collection of model instances.
+        field: Model field to extract.
+
+    Raises:
+        TypeError: If field has no declared type.
+
+    Returns:
+        NumPy vector of `dtype` corresponding to the field declaration.
+    """
+    field_type = type(next(iter(models))).model_fields[field].annotation
+    if field_type is None:
+        raise TypeError("Requested field has no declared type.")
+    return np.fromiter((getattr(model, field) for model in models), dtype=field_type)
 
 
 class MultiprocessingRNG:
