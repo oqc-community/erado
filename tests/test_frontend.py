@@ -8,18 +8,11 @@ from erado.circuits import ghz_circuit
 from qiskit import ClassicalRegister
 from qiskit_aer import AerSimulator
 
-import pytest
-
 
 N = 4
 """Number of qubits to use in these tests, unless otherwise specified."""
 
 
-MODEL_TYPES: list[type[ErasureModel]] = [ErasureCircuitSampler, ErasurePassJob]
-# TODO: Move this to fixture?
-
-
-@pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_all(model_type: type[ErasureModel]):
     """Test basic simulator usage, assuming end-of-line measurements on all qubits."""
     circuit = ghz_circuit(N)
@@ -38,7 +31,6 @@ def test_measure_EOL_all(model_type: type[ErasureModel]):
     assert results.counts.total() == shots
 
 
-@pytest.mark.parametrize("model_type", MODEL_TYPES)
 def test_measure_EOL_some(model_type: type[ErasureModel]):
     """Test basic simulator usage, assuming end-of-line measurements on only some qubits."""
     circuit = ghz_circuit(N)
