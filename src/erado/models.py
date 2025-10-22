@@ -483,7 +483,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         """Total number of gates in the circuit."""
         return len(self.circuit.data)
 
-    def erasable_gates(self) -> Generator[tuple[int, CircuitInstruction], None, None]:
+    def erasable_gates(self) -> Generator[tuple[int, CircuitInstruction]]:
         """Iterate through all erasable gates in the circuit.
 
         Yields:
