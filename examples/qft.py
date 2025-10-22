@@ -153,6 +153,7 @@ def example_QFT_sweep(plot_error_bars=True):
     rejection_rate = get_series(results_list, "rejection_rate")
     circuit_depth = get_series(results_list, "circuit_depth")
     n_erasable_gates = get_series(results_list, "n_erasable_gates")
+    fidelity = get_series(results_list, "fidelity")
 
     if plot_error_bars:
         yerr = np.apply_along_axis(lambda row: np.abs(row - rejection_rate), 1, intervals)
@@ -199,6 +200,13 @@ def example_QFT_sweep(plot_error_bars=True):
     ax5.set_ylabel("Rejection rate")
     fig5.savefig("figure5.pdf")
     fig5.savefig("figure5.png")
+
+    fig6, ax6 = plt.subplots(1)
+    ax6.plot(num_qubits, fidelity, "x-")
+    ax6.set_xlabel("Number of qubits, n")
+    ax6.set_ylabel("Fidelity")
+    fig6.savefig("figure6.pdf")
+    fig6.savefig("figure6.png")
 
 
 def plot_ideal_v_noisy(plot_error_bars=True):

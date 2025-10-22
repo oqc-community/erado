@@ -126,6 +126,16 @@ class CircuitState(pydantic.BaseModel):
         return handler(value)
 
 
+def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
+    counter = Counter[str]()
+    n = len(next(iter(counts)).erasure)
+    for state, count in counts.items():
+        if state.erasure == "0"*n:
+            counter[state.measure] += count
+            # TODO: here += can be replaced with =?
+    return counter
+
+
 class ErasureModel(Protocol):
     """Protocol representing an erasure circuit simulation model.
 

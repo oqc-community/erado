@@ -5,6 +5,7 @@ from erado.models import (
     CircuitState,
 )
 from erado.util import MultiprocessingRNG
+from erado.fidelity import calculate_fidelity
 
 from qiskit.providers import BackendV2 as Backend
 
@@ -21,6 +22,7 @@ class ErasureSimResults(BaseModel):
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
+    fidelity: float
 
 
 class ErasureSimFrontend(MultiprocessingRNG):
@@ -148,11 +150,14 @@ class ErasureSimFrontend(MultiprocessingRNG):
         if total_shots - n_rejected != shots:
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
+        fidelity = calculate_fidelity(counts, self.model.circuit)
+
         return ErasureSimResults(
             counts=counts,
             shots=total_shots,
             n_rejected=n_rejected,
             rejection_rate=n_rejected / total_shots,
             circuit_depth=self.model.circuit.depth(),
-            n_erasable_gates=self.model.n_erasable_gates
+            n_erasable_gates=self.model.n_erasable_gates,
+            fidelity=fidelity,
         )
