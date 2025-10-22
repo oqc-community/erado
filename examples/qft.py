@@ -6,7 +6,10 @@ from erado.frontend import (
     ErasureSimFrontend,
     ErasureSimResults,
 )
-from erado.util import get_series
+from erado.util import (
+    get_series,
+    working_directory,
+)
 import erado.circuits as circuits
 
 from qiskit import generate_preset_pass_manager
@@ -27,6 +30,10 @@ from dataclasses import dataclass
 import time
 from pathlib import Path
 import csv
+
+
+ROOT_DIR = Path("data")
+FIGURE_DIR = Path("figures")
 
 
 @dataclass
@@ -163,50 +170,51 @@ def example_QFT_sweep(plot_error_bars=True):
     p = noise_params.erasure_rate
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
-    fig1, ax1 = plt.subplots(1)
-    ax1.errorbar(num_qubits, rejection_rate, yerr, fmt="x-")
-    ax1.plot(num_qubits, rejection_rate_theoretical, "--", color="grey")
-    ax1.set_xlabel("Number of qubits, n")
-    ax1.set_ylabel("Rejection rate")
-    fig1.savefig("figure1.pdf")
-    fig1.savefig("figure1.png")
+    with working_directory(FIGURE_DIR):
+        fig1, ax1 = plt.subplots(1)
+        ax1.errorbar(num_qubits, rejection_rate, yerr, fmt="x-")
+        ax1.plot(num_qubits, rejection_rate_theoretical, "--", color="grey")
+        ax1.set_xlabel("Number of qubits, n")
+        ax1.set_ylabel("Rejection rate")
+        fig1.savefig("figure1.pdf")
+        fig1.savefig("figure1.png")
 
-    fig2, ax2 = plt.subplots(1)
-    ax2.errorbar(circuit_depth, rejection_rate, yerr, fmt="x-")
-    ax2.plot(circuit_depth, rejection_rate_theoretical, "--", color="grey")
-    ax2.set_xlabel("Circuit depth")
-    ax2.set_ylabel("Rejection rate")
-    fig2.savefig("figure2.pdf")
-    fig2.savefig("figure2.png")
+        fig2, ax2 = plt.subplots(1)
+        ax2.errorbar(circuit_depth, rejection_rate, yerr, fmt="x-")
+        ax2.plot(circuit_depth, rejection_rate_theoretical, "--", color="grey")
+        ax2.set_xlabel("Circuit depth")
+        ax2.set_ylabel("Rejection rate")
+        fig2.savefig("figure2.pdf")
+        fig2.savefig("figure2.png")
 
-    fig3, ax3 = plt.subplots(1)
-    ax3.plot(num_qubits, circuit_depth, "x-")
-    ax3.set_xlabel("Number of qubits, n")
-    ax3.set_ylabel("Circuit depth")
-    fig3.savefig("figure3.pdf")
-    fig3.savefig("figure3.png")
+        fig3, ax3 = plt.subplots(1)
+        ax3.plot(num_qubits, circuit_depth, "x-")
+        ax3.set_xlabel("Number of qubits, n")
+        ax3.set_ylabel("Circuit depth")
+        fig3.savefig("figure3.pdf")
+        fig3.savefig("figure3.png")
 
-    fig4, ax4 = plt.subplots(1)
-    ax4.plot(num_qubits, n_erasable_gates, "x-")
-    ax4.set_xlabel("Number of qubits, n")
-    ax4.set_ylabel("Number of (erasable) gates, g")
-    fig4.savefig("figure4.pdf")
-    fig4.savefig("figure4.png")
+        fig4, ax4 = plt.subplots(1)
+        ax4.plot(num_qubits, n_erasable_gates, "x-")
+        ax4.set_xlabel("Number of qubits, n")
+        ax4.set_ylabel("Number of (erasable) gates, g")
+        fig4.savefig("figure4.pdf")
+        fig4.savefig("figure4.png")
 
-    fig5, ax5 = plt.subplots(1)
-    ax5.errorbar(n_erasable_gates, rejection_rate, yerr, fmt="x-")
-    ax5.plot(n_erasable_gates, rejection_rate_theoretical, "--", color="grey")
-    ax5.set_xlabel("Number of (erasable) gates, g")
-    ax5.set_ylabel("Rejection rate")
-    fig5.savefig("figure5.pdf")
-    fig5.savefig("figure5.png")
+        fig5, ax5 = plt.subplots(1)
+        ax5.errorbar(n_erasable_gates, rejection_rate, yerr, fmt="x-")
+        ax5.plot(n_erasable_gates, rejection_rate_theoretical, "--", color="grey")
+        ax5.set_xlabel("Number of (erasable) gates, g")
+        ax5.set_ylabel("Rejection rate")
+        fig5.savefig("figure5.pdf")
+        fig5.savefig("figure5.png")
 
-    fig6, ax6 = plt.subplots(1)
-    ax6.plot(num_qubits, fidelity, "x-")
-    ax6.set_xlabel("Number of qubits, n")
-    ax6.set_ylabel("Fidelity")
-    fig6.savefig("figure6.pdf")
-    fig6.savefig("figure6.png")
+        fig6, ax6 = plt.subplots(1)
+        ax6.plot(num_qubits, fidelity, "x-")
+        ax6.set_xlabel("Number of qubits, n")
+        ax6.set_ylabel("Fidelity")
+        fig6.savefig("figure6.pdf")
+        fig6.savefig("figure6.png")
 
 
 def plot_ideal_v_noisy(plot_error_bars=True):
@@ -266,20 +274,21 @@ def plot_ideal_v_noisy(plot_error_bars=True):
         # Customise order of items in legend
         ax.legend(handles=[noisy, ideal, theoretical[0]])
 
-    fig1, ax1 = plt.subplots()
-    plot(ax1, num_qubits, "Number of qubits, n")
-    fig1.savefig("figure1.pdf")
-    fig1.savefig("figure1.png")
+    with working_directory(FIGURE_DIR):
+        fig1, ax1 = plt.subplots()
+        plot(ax1, num_qubits, "Number of qubits, n")
+        fig1.savefig("figure1.pdf")
+        fig1.savefig("figure1.png")
 
-    fig2, ax2 = plt.subplots()
-    plot(ax2, circuit_depth, "Circuit depth")
-    fig2.savefig("figure2.pdf")
-    fig2.savefig("figure2.png")
+        fig2, ax2 = plt.subplots()
+        plot(ax2, circuit_depth, "Circuit depth")
+        fig2.savefig("figure2.pdf")
+        fig2.savefig("figure2.png")
 
-    fig3, ax3 = plt.subplots()
-    plot(ax3, n_erasable_gates, "Number of (erasable) gates, g")
-    fig3.savefig("figure3.pdf")
-    fig3.savefig("figure3.png")
+        fig3, ax3 = plt.subplots()
+        plot(ax3, n_erasable_gates, "Number of (erasable) gates, g")
+        fig3.savefig("figure3.pdf")
+        fig3.savefig("figure3.png")
 
 
 def plot_times():
@@ -302,23 +311,25 @@ def plot_times():
         ax.legend()
         ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
 
-    fig1, ax1 = plt.subplots()
-    plot(ax1)
-    fig1.savefig("figure-time.pdf")
-    fig1.savefig("figure-time.png")
+    with working_directory(FIGURE_DIR):
+        fig1, ax1 = plt.subplots()
+        plot(ax1)
+        fig1.savefig("figure-time.pdf")
+        fig1.savefig("figure-time.png")
 
-    fig2, ax2 = plt.subplots()
-    ax2.set_yscale("log")
-    plot(ax2)
-    fig2.savefig("figure-time-log.pdf")
-    fig2.savefig("figure-time-log.png")
+        fig2, ax2 = plt.subplots()
+        ax2.set_yscale("log")
+        plot(ax2)
+        fig2.savefig("figure-time-log.pdf")
+        fig2.savefig("figure-time-log.png")
 
 
 if __name__ == "__main__":
     matplotlib.rcParams["savefig.dpi"] = 300
     matplotlib.rcParams["savefig.bbox"] = "tight"
 
-    # example_QFT()
-    example_QFT_sweep(plot_error_bars=True)
-    # plot_ideal_v_noisy(plot_error_bars=True)
-    # plot_times()
+    with working_directory(ROOT_DIR):
+        # example_QFT()
+        example_QFT_sweep(plot_error_bars=True)
+        # plot_ideal_v_noisy(plot_error_bars=True)
+        # plot_times()

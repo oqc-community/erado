@@ -1,6 +1,6 @@
 from erado.models import (
     CircuitState,
-    postselect_counts
+    postselect_counts,
 )
 from erado.util import NPVector
 

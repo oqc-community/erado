@@ -3,8 +3,14 @@
 import numpy as np
 import pydantic
 
+from collections.abc import (
+    Iterable,
+    Generator,
+)
+from pathlib import Path
 import multiprocessing
-from collections.abc import Iterable
+import contextlib
+import os
 
 
 type NPVector[T: np.generic] = np.ndarray[tuple[int], np.dtype[T]]
@@ -72,3 +78,28 @@ class MultiprocessingRNG:
             new_seed += cls._reseed_counter.value
 
         cls.seed(new_seed)
+
+
+@contextlib.contextmanager
+def working_directory(path: Path, mkdir: bool = True) -> Generator[None]:
+    """Context manager for safely and temporarily changing the current working directory.
+
+    Examples:
+        >>> with working_directory(Path("mysubdir")):
+        ...     plt.savefig("figure.pdf")
+        # Will save the figure as mysubdir/figure.pdf (creating mysubdir if it doesn't exist).
+
+    Args:
+        path: New working directory.
+        mkdir: If true, make the directory if it doesn't exist.
+    """
+    if mkdir:
+        path.mkdir(exist_ok=True, parents=True)
+
+    cwd = Path.cwd()
+    os.chdir(path)
+
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
