@@ -9,7 +9,7 @@ from erado.frontend import (
     ErasureSimFrontend,
     ErasureSimResults,
 )
-from erado.circuits import ghz_circuit
+import erado.circuits as circuits
 
 from qiskit import ClassicalRegister
 from qiskit_aer import AerSimulator
@@ -21,7 +21,7 @@ N = 4
 
 def test_measure_EOL_all(model_type: type[ErasureModel]):
     """Test basic simulator usage, assuming end-of-line measurements on all qubits."""
-    circuit = ghz_circuit(N)
+    circuit = circuits.ghz(N)
     circuit.measure_all()
 
     backend = AerSimulator(method="statevector", device="CPU")
@@ -39,7 +39,7 @@ def test_measure_EOL_all(model_type: type[ErasureModel]):
 
 def test_measure_EOL_some(model_type: type[ErasureModel]):
     """Test basic simulator usage, assuming end-of-line measurements on only some qubits."""
-    circuit = ghz_circuit(N)
+    circuit = circuits.ghz(N)
 
     circuit.add_register(ClassicalRegister(N-2, "meas"))
     circuit.barrier()
@@ -70,7 +70,7 @@ def test_multiprocessing_deadlock():
     However, it now seems that I've fixed it by some careful use of multiprocessing context
     settings. This test is designed to catch any regressions in this bugfix.
     """
-    circuit = ghz_circuit(N)
+    circuit = circuits.ghz(N)
     circuit.measure_all()
 
     backend = AerSimulator(method="statevector", device="CPU")

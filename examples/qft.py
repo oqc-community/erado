@@ -7,9 +7,9 @@ from erado.frontend import (
     ErasureSimResults,
 )
 from erado.util import get_series
+import erado.circuits as circuits
 
 from qiskit import generate_preset_pass_manager
-from qiskit.synthesis import synth_qft_line
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import (
     NoiseModel,
@@ -46,8 +46,7 @@ def run_simulation(
     ):
     print(f"n = {n}")
 
-    # TODO: This is linear connectivity, not square/hex
-    circuit = synth_qft_line(n)
+    circuit = circuits.qft_linear(n)
     circuit.measure_all()
     if print_circuits:
         print("Raw circuit:")

@@ -1,5 +1,5 @@
 def example_ErasurePass():
-    from erado.circuits import ghz_circuit
+    import erado.circuits as circuits
     from erado.models import (
         ErasurePass,
         add_erasure_noise,
@@ -11,7 +11,7 @@ def example_ErasurePass():
 
 
     n = 8
-    qc = ghz_circuit(n)
+    qc = circuits.ghz(n)
     qc.measure_all()
 
     print(qc)
@@ -44,7 +44,7 @@ def example_ErasurePass():
 
 
 def example_ErasureCircuitSampler():
-    from erado.circuits import ghz_circuit
+    import erado.circuits as circuits
     from erado.models import ErasureCircuitSampler
 
     from qiskit_aer import AerSimulator
@@ -57,7 +57,7 @@ def example_ErasureCircuitSampler():
     backend = AerSimulator(method="statevector", device="GPU")
 
     n = 8
-    qc = ghz_circuit(n)
+    qc = circuits.ghz(n)
     qc.measure_all()
     print(qc)
 
@@ -81,7 +81,7 @@ def example_ErasureCircuitSampler():
 
 
 def example_ErasureSimFrontend():
-    from erado.circuits import ghz_circuit
+    import erado.circuits as circuits
     from erado.models import (
         ErasureCircuitSampler,
         ErasurePassJob,
@@ -106,7 +106,7 @@ def example_ErasureSimFrontend():
 
     # Circuit
     n = 8
-    circuit = ghz_circuit(n)
+    circuit = circuits.ghz(n)
     circuit.measure_all()
 
     # Non-erasure noise model, e.g. depolarising
