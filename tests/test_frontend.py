@@ -1,6 +1,9 @@
+"""Tests for expected behaviour of `ErasureSimFrontend`."""
+
 from erado.models import ErasureModel, ErasurePassJob, ErasureCircuitSampler
 from erado.frontend import ErasureSimFrontend, ErasureSimResults
 from erado.circuits import ghz_circuit
+# TODO: lint rule for imports on newlines with commas?
 
 from qiskit import ClassicalRegister
 from qiskit_aer import AerSimulator
@@ -13,6 +16,7 @@ N = 4
 
 
 MODEL_TYPES: list[type[ErasureModel]] = [ErasureCircuitSampler, ErasurePassJob]
+# TODO: Move this to fixture?
 
 
 @pytest.mark.parametrize("model_type", MODEL_TYPES)

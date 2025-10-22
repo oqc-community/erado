@@ -47,13 +47,20 @@ style = "pep440"
 types = "pyright src"
 pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
-lint = "ruff check src/erado"
+lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
 
 
 [tool.pyright]
 typeCheckingMode = "standard"
 
+
+[tool.ruff]
+extend-exclude = [
+    "typings",
+    "examples",
+    "src/make_stubs.py",
+]
 
 [tool.ruff.lint]
 ignore = [
@@ -65,6 +72,11 @@ select = [
     "D401",    # Docstrings must have imperative mood
     "ANN",     # Type annotations are mandatory
     "F",       # Enable Pyflakes rules (common code errors e.g. unused imports)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = [
+    "ANN201"   # Don't require "-> None" on every test function
 ]
 
 [tool.ruff.lint.pydocstyle]
