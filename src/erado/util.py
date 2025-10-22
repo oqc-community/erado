@@ -1,7 +1,7 @@
 """Miscellaneous utilities used across the erado library."""
 
 import numpy as np
-from pydantic import BaseModel
+import pydantic
 
 import multiprocessing
 from collections.abc import Iterable
@@ -17,7 +17,7 @@ type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
 """N-dimensional NumPy array of a given type."""
 
 
-def get_series(models: Iterable[BaseModel], field: str) -> NPVector:
+def get_series(models: Iterable[pydantic.BaseModel], field: str) -> NPVector:
     """Make a data series from a collection of Pydantic models.
 
     Args:

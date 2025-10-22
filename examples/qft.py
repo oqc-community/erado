@@ -1,11 +1,20 @@
-from erado.models import ErasureCircuitSampler, ErasurePassJob
-from erado.frontend import ErasureSimFrontend, ErasureSimResults
+from erado.models import (
+    ErasureCircuitSampler,
+    ErasurePassJob,
+)
+from erado.frontend import (
+    ErasureSimFrontend,
+    ErasureSimResults,
+)
 from erado.util import get_series
 
 from qiskit import generate_preset_pass_manager
 from qiskit.synthesis import synth_qft_line
 from qiskit_aer import AerSimulator
-from qiskit_aer.noise import NoiseModel, depolarizing_error
+from qiskit_aer.noise import (
+    NoiseModel,
+    depolarizing_error,
+)
 
 import numpy as np
 from scipy.stats import binomtest

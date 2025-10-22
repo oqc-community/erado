@@ -1,6 +1,9 @@
 """Provides a frontend class for using the erasure simulation models."""
 
-from erado.models import ErasureModel, CircuitState
+from erado.models import (
+    ErasureModel,
+    CircuitState,
+)
 from erado.util import MultiprocessingRNG
 
 from qiskit.providers import BackendV2 as Backend

@@ -1,25 +1,47 @@
 """Provides the underlying erasure simulation models."""
 
-from erado.util import MultiprocessingRNG, NPVector
+from erado.util import (
+    MultiprocessingRNG,
+    NPVector,
+)
 
 from qiskit import QuantumCircuit
-from qiskit.circuit import QuantumRegister, ClassicalRegister, IfElseOp, Measure, Reset, Qubit, CircuitInstruction
+from qiskit.circuit import (
+    QuantumRegister,
+    ClassicalRegister,
+    IfElseOp,
+    Measure,
+    Reset,
+    Qubit,
+    CircuitInstruction,
+)
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.dagcircuit import DAGCircuit
 from qiskit.providers import BackendV2 as Backend
 
 from qiskit_aer import AerSimulator
-from qiskit_aer.noise import NoiseModel, pauli_error
+from qiskit_aer.noise import (
+    NoiseModel,
+    pauli_error,
+)
 
 import numpy as np
-
-from pydantic import BaseModel, ConfigDict, ModelWrapValidatorHandler, model_validator, ValidationError
+import pydantic
 
 from itertools import chain
-from typing import Protocol, Self, override
+from typing import (
+    Protocol,
+    Self,
+    override,
+)
 from copy import deepcopy
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import (
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+    as_completed,
+    wait,
+)
 from collections import Counter
 from collections.abc import Generator
 import os
@@ -30,7 +52,7 @@ import multiprocessing
 _logger = logging.getLogger(__name__)
 
 
-class CircuitState(BaseModel):
+class CircuitState(pydantic.BaseModel):
     """Data structure representing the observed state of a quantum circuit.
 
     This is equivalent to a tuple of the state of erasure checks on all qubits in the circuit (the
@@ -40,7 +62,7 @@ class CircuitState(BaseModel):
     erasure: str
     measure: str
 
-    model_config = ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
+    model_config = pydantic.ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
 
     @classmethod
     def from_string(cls, state: str, n_qubits: int) -> Self:
@@ -80,9 +102,9 @@ class CircuitState(BaseModel):
         """
         return f"{self.erasure},{self.measure}"
 
-    @model_validator(mode="wrap")
+    @pydantic.model_validator(mode="wrap")
     @classmethod
-    def deserialise(cls, value: object, handler: ModelWrapValidatorHandler[Self]) -> Self:
+    def deserialise(cls, value: object, handler: pydantic.ModelWrapValidatorHandler[Self]) -> Self:
         """Deserialise a `CircuitState` from a JSON-suitable string.
 
         Args:
@@ -100,7 +122,7 @@ class CircuitState(BaseModel):
                 erasure, measure = value.split(",", 1)
                 return cls(erasure=erasure, measure=measure)
             except ValueError:
-                raise ValidationError("Could not deserialise CircuitState from string.")
+                raise pydantic.ValidationError("Could not deserialise CircuitState from string.")
         return handler(value)
 
 
