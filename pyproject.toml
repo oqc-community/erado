@@ -50,6 +50,14 @@ unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
 
+[tool.poe.tasks.checks]
+sequence = [
+    "types",
+    "lint",
+    "unit-tests",
+]
+ignore_fail = true
+
 
 [tool.pyright]
 typeCheckingMode = "standard"
