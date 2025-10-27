@@ -2,6 +2,7 @@
 
 import numpy as np
 import pydantic
+import typing_extensions
 
 from collections.abc import (
     Iterable,
@@ -20,7 +21,42 @@ type NPMatrix[T: np.generic] = np.ndarray[tuple[int, int], np.dtype[T]]
 """2-dimensional NumPy array of a given type."""
 
 type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
-"""N-dimensional NumPy array of a given type."""
+"""N-dimensional NumPy array of a given type.
+
+This is functionally equivalent to `np.typing.NDArray` but is defined here for consistency
+with our other aliases, `NPVector` and `NPMatrix`, which are both subtypes of `NPTensor`.
+"""
+
+
+type NestedList[T] = list[T | NestedList[T]]
+"""Arbitrarily-nested `list` of a given value type.
+
+This is effectively the built-in equivalent of `NPTensor`.
+"""
+
+
+def _nptensor_serialiser[T: np.generic](x: NPTensor[T]) -> NestedList[T]:
+    return x.tolist()  # type: ignore # Incompatible with NumPy's type hint overloads
+
+def _nptensor_validator(value: object) -> NPTensor:
+    if isinstance(value, np.ndarray):
+        return value
+
+    if isinstance(value, list):
+        return np.asarray(value)
+
+    raise ValueError("Object is neither an NPTensor nor a built-in list.")
+
+type NPPydantic[T: NPTensor] = typing_extensions.Annotated[
+    T,
+    pydantic.PlainSerializer(_nptensor_serialiser),
+    pydantic.BeforeValidator(_nptensor_validator),
+]
+"""Pydantic field annotator that enables (de-)serialisation for NumPy arrays.
+
+Don't forget that `arbitrary_types_allowed=True` is still required on models if using this
+annotator.
+"""
 
 
 def get_series(models: Iterable[pydantic.BaseModel], field: str) -> NPVector:
@@ -39,6 +75,7 @@ def get_series(models: Iterable[pydantic.BaseModel], field: str) -> NPVector:
     field_type = type(next(iter(models))).model_fields[field].annotation
     if field_type is None:
         raise TypeError("Requested field has no declared type.")
+    # TODO: support vector fields to output matrix
     return np.fromiter((getattr(model, field) for model in models), dtype=field_type)
 
 

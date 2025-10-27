@@ -122,7 +122,7 @@ class CircuitState(pydantic.BaseModel):
                 erasure, measure = value.split(",", 1)
                 return cls(erasure=erasure, measure=measure)
             except ValueError:
-                raise pydantic.ValidationError("Could not deserialise CircuitState from string.")
+                raise ValueError("Could not deserialise CircuitState from string.")
         return handler(value)
 
 
