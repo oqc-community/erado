@@ -64,22 +64,14 @@ def calculate_fidelity(psi: Statevector, circuit_ideal: QuantumCircuit) -> float
 
 
 class FidelityFunctor:
-    def __init__(self, postselect: bool, circuit: QuantumCircuit):
-        self.postselect = postselect
-        self.circuit = circuit
-
+    def __init__(self):
         self.fidelities = list[float]()
 
     def __call__(self, info: ShotInfo) -> None:
-        # Discard any erased states if postselecting
-        pred = all((c == "0" for c in info.state[:info.n_qubits]))
-        _logger.debug(f"{info.state} ({info.state[:info.n_qubits]}) {pred}")
-        if not self.postselect or pred:
-            try:  # TODO: replace with default nan to avoid exceptions?
-                psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
-                fid = calculate_fidelity(psi, self.circuit)
-                self.fidelities.append(fid)
-            except KeyError:
-                _logger.debug("No psi found in this shot?")
-        else:
-            _logger.debug("Ignoring this rejected shot.")
+        try:
+            psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
+            fid = calculate_fidelity(psi, info.model.circuit)
+            self.fidelities.append(fid)
+        except KeyError:
+            _logger.debug("No psi found in this shot! Using NaN.")
+            self.fidelities.append(np.nan)

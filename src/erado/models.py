@@ -142,13 +142,6 @@ def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
     return counter
 
 
-@dataclass(frozen=True)
-class ShotInfo:
-    result: qiskit.result.Result
-    state: str
-    n_qubits: int
-
-
 type ShotCallback = Callable[[ShotInfo], None]
 
 
@@ -184,6 +177,13 @@ class ErasureModel(Protocol):
             A map of each `CircuitState` to the number of times it was observed.
         """
         ...
+
+
+@dataclass(frozen=True)
+class ShotInfo:
+    model: ErasureModel
+    result: qiskit.result.Result
+    state: str
 
 
 EXEMPT_GATES = ["barrier", "measure"]
@@ -649,7 +649,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                     state: str = erasure_state + next(iter(result.get_counts()))
 
                     for callback in callbacks:
-                        callback(ShotInfo(result, state, len(erasure_state)))
+                        callback(ShotInfo(self, result, state))
 
                     yield state
 

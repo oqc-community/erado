@@ -150,7 +150,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        fidelity_callback = FidelityFunctor(postselect, self.model.circuit)
+        fidelity_callback = FidelityFunctor()
 
         counts = self._run_once(backend, shots, [fidelity_callback])
         total_shots = shots
