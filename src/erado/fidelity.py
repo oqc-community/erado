@@ -1,6 +1,7 @@
 from erado.models import (
     CircuitState,
     postselect_counts,
+    ShotInfo,
 )
 from erado.util import NPVector
 
@@ -10,19 +11,29 @@ from qiskit.quantum_info import Statevector
 import numpy as np
 
 from collections import Counter
+import logging
+
+
+_logger = logging.getLogger(__name__)
 
 
 def calculate_pdf(circuit: QuantumCircuit) -> NPVector[np.float64]:
+    # Remove any final measurements (we want the final state of the circuit before observation)
     circuit_pure = circuit.remove_final_measurements(inplace=False)
     if circuit_pure is None:
         raise RuntimeError("Qiskit's remove_final_measurements did not return a circuit as requested.")
+
+    # Also remove any save_statevector calls (else constructing the `Statevector` will fail)
+    for i in reversed(range(len(circuit_pure.data))):
+        if circuit_pure.data[i].operation.name == "save_statevector":
+            del circuit_pure.data[i]
 
     psi = Statevector(circuit_pure)
     pdf = np.abs(psi)**2
     return pdf
 
 
-def calculate_fidelity(counts: Counter[CircuitState], circuit: QuantumCircuit) -> float:
+def calculate_fidelity_old(counts: Counter[CircuitState], circuit: QuantumCircuit) -> float:
     # Calculate the exact non-noisy probability density function
     pdf_ideal = calculate_pdf(circuit)
 
@@ -38,3 +49,37 @@ def calculate_fidelity(counts: Counter[CircuitState], circuit: QuantumCircuit) -
     # Calculate the fidelity (i.e. square of the Bhattacharyya coefficient)
     fidelity = np.inner(np.sqrt(pdf_ideal), np.sqrt(pdf_noisy))**2
     return fidelity
+
+
+def calculate_fidelity(psi: Statevector, circuit_ideal: QuantumCircuit) -> float:
+    # Calculate the exact non-noisy probability density function
+    pdf_ideal = calculate_pdf(circuit_ideal)
+
+    # Calculate the noisy probability density function from this shot
+    pdf_noisy = np.abs(psi)**2
+
+    # Calculate the fidelity (i.e. square of the Bhattacharyya coefficient)
+    fidelity = np.inner(np.sqrt(pdf_ideal), np.sqrt(pdf_noisy))**2
+    return fidelity
+
+
+class FidelityFunctor:
+    def __init__(self, postselect: bool, circuit: QuantumCircuit):
+        self.postselect = postselect
+        self.circuit = circuit
+
+        self.fidelities = list[float]()
+
+    def __call__(self, info: ShotInfo) -> None:
+        # Discard any erased states if postselecting
+        pred = all((c == "0" for c in info.state[:info.n_qubits]))
+        _logger.debug(f"{info.state} ({info.state[:info.n_qubits]}) {pred}")
+        if not self.postselect or pred:
+            try:  # TODO: replace with default nan to avoid exceptions?
+                psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
+                fid = calculate_fidelity(psi, self.circuit)
+                self.fidelities.append(fid)
+            except KeyError:
+                _logger.debug("No psi found in this shot?")
+        else:
+            _logger.debug("Ignoring this rejected shot.")

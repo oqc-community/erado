@@ -3,18 +3,24 @@
 from erado.models import (
     ErasureModel,
     CircuitState,
+    ShotCallback,
 )
-from erado.util import MultiprocessingRNG
-from erado.fidelity import calculate_fidelity
+from erado.util import (
+    MultiprocessingRNG,
+    NPVector,
+    NPPydantic,
+)
+from erado.fidelity import FidelityFunctor
 
 from qiskit.providers import BackendV2 as Backend
 
-from pydantic import BaseModel
+import pydantic
+import numpy as np
 
 from collections import Counter
 
 
-class ErasureSimResults(BaseModel):
+class ErasureSimResults(pydantic.BaseModel):
     """Data structure of the results from an `ErasureSimFrontend` run."""
     counts: Counter[CircuitState]
     shots: int
@@ -22,7 +28,9 @@ class ErasureSimResults(BaseModel):
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
-    fidelity: float
+    fidelity: NPPydantic[NPVector[np.float64]]
+
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
 
 class ErasureSimFrontend(MultiprocessingRNG):
@@ -73,6 +81,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
         """Probability that positive erasure checks are flipped."""
         return self._false_negative_rate
 
+    # TODO: we've used n_{object} elsewhere... change to n_qubits?
     @property
     def num_qubits(self) -> int:
         """Number of qubits in the quantum circuit."""
@@ -102,8 +111,14 @@ class ErasureSimFrontend(MultiprocessingRNG):
 
         return CircuitState(erasure=x_noisy_str, measure=state.measure)
 
-    def _run_once(self, backend: Backend, shots: int) -> Counter[CircuitState]:
-        counts = self.model.run(backend, shots)
+    def _run_once(
+            self,
+            backend: Backend,
+            shots: int,
+            callbacks: list[ShotCallback],
+        ) -> Counter[CircuitState]:
+        counts = self.model.run(backend, shots, callbacks, multiprocess=False)
+        # TODO: multiprocess=False is jsut temporary here!!! Support kwargs properly?
 
         if self.noisy_checks:
             counts = Counter((self._add_check_noise(elt) for elt in counts.elements()))
@@ -135,14 +150,16 @@ class ErasureSimFrontend(MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        counts = self._run_once(backend, shots)
+        fidelity_callback = FidelityFunctor(postselect, self.model.circuit)
+
+        counts = self._run_once(backend, shots, [fidelity_callback])
         total_shots = shots
         n_rejected = self._count_rejected(counts)
 
         if postselect:
             n_remaining = n_rejected
             while n_remaining > 0:
-                counts.update(self._run_once(backend, n_remaining))
+                counts.update(self._run_once(backend, n_remaining, [fidelity_callback]))
                 total_shots += n_remaining
                 n_rejected = self._count_rejected(counts)
                 n_remaining = shots - (total_shots - n_rejected)
@@ -150,7 +167,8 @@ class ErasureSimFrontend(MultiprocessingRNG):
         if total_shots - n_rejected != shots:
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
-        fidelity = calculate_fidelity(counts, self.model.circuit)
+        assert len(fidelity_callback.fidelities) == shots
+        fidelity = np.array(fidelity_callback.fidelities)
 
         return ErasureSimResults(
             counts=counts,
