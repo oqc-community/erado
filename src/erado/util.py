@@ -7,6 +7,7 @@ import typing_extensions
 from collections.abc import (
     Iterable,
     Generator,
+    Sized,
 )
 from pathlib import Path
 import multiprocessing
@@ -23,7 +24,7 @@ type NPMatrix[T: np.generic] = np.ndarray[tuple[int, int], np.dtype[T]]
 type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
 """N-dimensional NumPy array of a given type.
 
-This is functionally equivalent to `np.typing.NDArray` but is defined here for consistency
+This is functionally equivalent to `numpy.typing.NDArray` but is defined here for consistency
 with our other aliases, `NPVector` and `NPMatrix`, which are both subtypes of `NPTensor`.
 """
 
@@ -59,24 +60,59 @@ annotator.
 """
 
 
-def get_series(models: Iterable[pydantic.BaseModel], field: str) -> NPVector:
+def get_series(
+        models: Iterable[pydantic.BaseModel],
+        field: str,
+        subarray_size: int | None = None
+    ) -> NPVector | NPMatrix:
     """Make a data series from a collection of Pydantic models.
+
+    The NumPy `dtype` is inferred from the type annotation in the model definition. A type
+    annotation is therefore required on the field (dynamic inference is not possible due to the use
+    of `numpy.fromiter` for performance).
+
+    If the requested field is a scalar or other arbitrary object type, an `NPVector` is returned
+    with length equal to the number of objects in `models`.
+
+    If the requested field is a NumPy vector (annotated as `NPPydantic[NPVector[T]]`), an
+    `NPMatrix[T]` is returned with each vector as a row. As the matrix must be square, `subarray_size`
+    must be provided and all vectors in `models` must be of this length.
+
+    Higher-dimensional subarrays are not currently supported (i.e. the field cannot be
+    `NPMatrix`/`NPTensor`).
 
     Args:
         models: Collection of model instances.
         field: Model field to extract.
+        subarray_size: Length of each subarray.
 
     Raises:
-        TypeError: If field has no declared type.
+        TypeError: If field has no type annotation.
+        NotImplementedError: If field is a `NPMatrix`/`NPTensor` (not currently supported).
+        ValueError: If subarray_size is not provided despite the field being a subarray type.
 
     Returns:
-        NumPy vector of `dtype` corresponding to the field declaration.
+        NumPy array with `dtype` corresponding to the field declaration.
     """
     field_type = type(next(iter(models))).model_fields[field].annotation
     if field_type is None:
         raise TypeError("Requested field has no declared type.")
-    # TODO: support vector fields to output matrix
-    return np.fromiter((getattr(model, field) for model in models), dtype=field_type)
+
+    if field_type.__name__ == "NPPydantic":
+        if field_type.__args__[0].__name__ != "NPVector":
+            raise NotImplementedError("Only NPVector is currently supported as a subarray type.")
+
+        if subarray_size is None:
+            raise ValueError("subarray_size must be provided for subarray types.")
+
+        dtype = np.dtype((field_type.__args__[0].__args__[0], subarray_size))
+    else:
+        dtype = field_type
+
+    # -1 is the default value in np.fromiter which just sizes dynamically
+    count = len(models) if isinstance(models, Sized) else -1
+
+    return np.fromiter((getattr(model, field) for model in models), dtype=dtype, count=count)
 
 
 class MultiprocessingRNG:
