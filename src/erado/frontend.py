@@ -28,7 +28,7 @@ class ErasureSimResults(pydantic.BaseModel):
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
-    fidelity: NPPydantic[NPVector[np.float64]]
+    fidelity: NPPydantic[NPVector[np.float64]] | None
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
@@ -130,7 +130,13 @@ class ErasureSimFrontend(MultiprocessingRNG):
                     for state, count in counts.items()
                     if state.erasure != "0"*self.num_qubits))
 
-    def run(self, backend: Backend, shots: int, postselect: bool = False) -> ErasureSimResults:
+    def run(
+            self,
+            backend: Backend,
+            shots: int,
+            postselect: bool = False,
+            get_fidelities: bool = True,
+        ) -> ErasureSimResults:
         """Execute the simulation on a given backend for some number of shots.
 
         This uses the `run` method on the `model` to generate the target number of shots.
@@ -150,16 +156,20 @@ class ErasureSimFrontend(MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        fidelity_callback = FidelityFunctor()
+        callbacks = list[ShotCallback]()
 
-        counts = self._run_once(backend, shots, [fidelity_callback])
+        fidelity_functor = None
+        if get_fidelities:
+            callbacks.append(fidelity_functor := FidelityFunctor())
+
+        counts = self._run_once(backend, shots, callbacks)
         total_shots = shots
         n_rejected = self._count_rejected(counts)
 
         if postselect:
             n_remaining = n_rejected
             while n_remaining > 0:
-                counts.update(self._run_once(backend, n_remaining, [fidelity_callback]))
+                counts.update(self._run_once(backend, n_remaining, callbacks))
                 total_shots += n_remaining
                 n_rejected = self._count_rejected(counts)
                 n_remaining = shots - (total_shots - n_rejected)
@@ -167,8 +177,12 @@ class ErasureSimFrontend(MultiprocessingRNG):
         if total_shots - n_rejected != shots:
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
-        assert len(fidelity_callback.fidelities) == shots
-        fidelity = np.array(fidelity_callback.fidelities)
+        fidelity_array = None
+        if fidelity_functor is not None:
+            assert len(fidelity_functor.fidelities) == shots
+            fidelity_array = np.fromiter((tup[1] for tup in fidelity_functor.fidelities),
+                                         dtype=np.float64,
+                                         count=shots)
 
         return ErasureSimResults(
             counts=counts,
@@ -177,5 +191,5 @@ class ErasureSimFrontend(MultiprocessingRNG):
             rejection_rate=n_rejected / total_shots,
             circuit_depth=self.model.circuit.depth(),
             n_erasable_gates=self.model.n_erasable_gates,
-            fidelity=fidelity,
+            fidelity=fidelity_array,
         )

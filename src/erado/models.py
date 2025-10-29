@@ -164,6 +164,7 @@ class ErasureModel(Protocol):
         """Construct a model with a Qiskit circuit and uniform erasure rate."""
         ...
 
+    # TODO: make callbacks Iterable not list?
     def run(
             self, backend: Backend, shots: int, callbacks: list[ShotCallback] = []
         ) -> Counter[CircuitState]:
@@ -183,7 +184,7 @@ class ErasureModel(Protocol):
 class ShotInfo:
     model: ErasureModel
     result: qiskit.result.Result
-    state: str
+    state: CircuitState
 
 
 EXEMPT_GATES = ["barrier", "measure"]
@@ -649,7 +650,11 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                     state: str = erasure_state + next(iter(result.get_counts()))
 
                     for callback in callbacks:
-                        callback(ShotInfo(self, result, state))
+                        callback(ShotInfo(
+                            self,
+                            result,
+                            CircuitState.from_string(state, self.circuit.num_qubits),
+                        ))
 
                     yield state
 

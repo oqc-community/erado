@@ -65,13 +65,13 @@ def calculate_fidelity(psi: Statevector, circuit_ideal: QuantumCircuit) -> float
 
 class FidelityFunctor:
     def __init__(self):
-        self.fidelities = list[float]()
+        self.fidelities = list[tuple[str, float]]()
 
     def __call__(self, info: ShotInfo) -> None:
         try:
             psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
             fid = calculate_fidelity(psi, info.model.circuit)
-            self.fidelities.append(fid)
+            self.fidelities.append((info.state.erasure, fid))
         except KeyError:
             _logger.debug("No psi found in this shot! Using NaN.")
-            self.fidelities.append(np.nan)
+            self.fidelities.append((info.state.erasure, np.nan))
