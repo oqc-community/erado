@@ -11,6 +11,8 @@ from qiskit.quantum_info import Statevector
 import numpy as np
 
 from collections import Counter
+from collections.abc import Generator
+from dataclasses import dataclass
 import logging
 
 
@@ -64,14 +66,38 @@ def calculate_fidelity(psi: Statevector, circuit_ideal: QuantumCircuit) -> float
 
 
 class FidelityFunctor:
+    @dataclass
+    class Result:
+        state: CircuitState
+        fidelity: float
+
     def __init__(self):
-        self.fidelities = list[tuple[str, float]]()
+        self._results = list[self.Result]()
+        self._round_size: int = 0
 
     def __call__(self, info: ShotInfo) -> None:
+        self._round_size += 1
         try:
             psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
-            fid = calculate_fidelity(psi, info.model.circuit)
-            self.fidelities.append((info.state.erasure, fid))
+            fid = calculate_fidelity(psi, info.model.circuit)  # TODO: overload to accept precomputed ideal PDF
+            self._results.append(self.Result(info.state, fid))
         except KeyError:
-            _logger.debug("No psi found in this shot! Using NaN.")
-            self.fidelities.append((info.state.erasure, np.nan))
+            _logger.debug("No psi found in this shot! Using NaN.")  # TODO: is this because of erasure events?
+            self._results.append(self.Result(info.state, np.nan))
+
+    def new_round(self) -> None:
+        self._round_size = 0
+
+    def _results_generator(self, start: int, stop: int) -> Generator[Result]:
+        for i in range(start, stop):
+            yield self._results[i]
+
+    def results(self) -> Generator[Result]:
+        yield from self._results_generator(
+            0, len(self._results)
+        )
+
+    def results_round(self) -> Generator[Result]:
+        yield from self._results_generator(
+            len(self._results) - self._round_size, len(self._results)
+        )
