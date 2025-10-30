@@ -1,3 +1,6 @@
+# TODO: Support multiprocessing (via shared memory or similar).
+# TODO: Don't forget to update all signatures/docstrings etc.
+
 from erado.models import (
     CircuitState,
     postselect_counts,
@@ -91,7 +94,7 @@ class FidelityFunctor:
             )
             self._results.append(self.Result(info.state, fid))
         except KeyError:
-            _logger.debug("No psi found in this shot! Using NaN.")  # TODO: is this because of erasure events?
+            _logger.error(f"No psi found in this shot (state: {info.state}); using NaN.")
             self._results.append(self.Result(info.state, np.nan))
 
     def new_round(self) -> None:

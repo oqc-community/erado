@@ -187,8 +187,12 @@ class ShotInfo:
     state: CircuitState
 
 
-EXEMPT_GATES = ["barrier", "measure"]
-"""Circuit elements which are never involved in erasure events."""
+EXEMPT_GATES = [
+    "barrier",
+    "measure",
+    "save_statevector",
+]
+"""Circuit instructions which are never involved in erasure events."""
 
 
 class ErasurePass(TransformationPass):
