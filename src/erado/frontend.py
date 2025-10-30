@@ -117,13 +117,12 @@ class ErasureSimFrontend(MultiprocessingRNG):
             shots: int,
             callbacks: list[ShotCallback],
             fidelity_functor: FidelityFunctor | None,
+            model_kwargs: dict[str, object],
         ) -> Counter[CircuitState]:
         if fidelity_functor is not None:
             fidelity_functor.new_round()
 
-        counts = self.model.run(backend, shots, callbacks, multiprocess=False)
-        # TODO: multiprocess=False is just temporary here, don't forget to remove!
-        # FIXME: Support kwargs properly?
+        counts = self.model.run(backend, shots, callbacks, **model_kwargs)
 
         if self.noisy_checks:
             if fidelity_functor is not None:
@@ -147,6 +146,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
             shots: int,
             postselect: bool = False,
             get_fidelities: bool = True,
+            **kwargs: object,
         ) -> ErasureSimResults:
         """Execute the simulation on a given backend for some number of shots.
 
@@ -174,14 +174,14 @@ class ErasureSimFrontend(MultiprocessingRNG):
             callbacks.append(fidelity_functor := FidelityFunctor(self.model.circuit))
             # TODO: should fidelity_functor be refactored to a private field?
 
-        counts = self._run_once(backend, shots, callbacks, fidelity_functor)
+        counts = self._run_once(backend, shots, callbacks, fidelity_functor, kwargs)
         total_shots = shots
         n_rejected = self._count_rejected(counts)
 
         if postselect:
             n_remaining = n_rejected
             while n_remaining > 0:
-                counts.update(self._run_once(backend, n_remaining, callbacks, fidelity_functor))
+                counts.update(self._run_once(backend, n_remaining, callbacks, fidelity_functor, kwargs))
                 total_shots += n_remaining
                 n_rejected = self._count_rejected(counts)
                 n_remaining = shots - (total_shots - n_rejected)

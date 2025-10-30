@@ -167,7 +167,11 @@ class ErasureModel(Protocol):
 
     # TODO: make callbacks Iterable not list?
     def run(
-            self, backend: Backend, shots: int, callbacks: list[ShotCallback] = []
+            self,
+            backend: Backend,
+            shots: int,
+            callbacks: list[ShotCallback] = [],
+            **_
         ) -> Counter[CircuitState]:
         """Execute an erasure simulation using this model.
 
@@ -178,6 +182,7 @@ class ErasureModel(Protocol):
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
         """
+        # NOTE: This signature enforces **_ to allow ignoring unused kwargs.
         ...
 
 
@@ -580,6 +585,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             shots: int,
             callbacks: list[ShotCallback] = [],
             multiprocess: bool = True,
+            **_
         ) -> Counter[CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
