@@ -122,7 +122,8 @@ class ErasureSimFrontend(MultiprocessingRNG):
             fidelity_functor.new_round()
 
         counts = self.model.run(backend, shots, callbacks, multiprocess=False)
-        # TODO: multiprocess=False is jsut temporary here!!! Support kwargs properly?
+        # TODO: multiprocess=False is just temporary here, don't forget to remove!
+        # FIXME: Support kwargs properly?
 
         if self.noisy_checks:
             if fidelity_functor is not None:

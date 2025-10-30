@@ -1,5 +1,6 @@
 """Provides the underlying erasure simulation models."""
 # TODO: this file should probably be split up soon
+# TODO: Add callback support to ErasurePassJob (if possible)
 
 from erado.util import (
     MultiprocessingRNG,
