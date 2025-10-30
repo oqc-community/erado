@@ -52,8 +52,8 @@ stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
 
 [tool.poe.tasks.checks]
 sequence = [
-    "types",
     "lint",
+    "types",
     "unit-tests",
 ]
 ignore_fail = true
