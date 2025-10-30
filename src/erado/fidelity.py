@@ -53,9 +53,14 @@ def calculate_fidelity_old(counts: Counter[CircuitState], circuit: QuantumCircui
     return fidelity
 
 
-def calculate_fidelity(psi: Statevector, circuit_ideal: QuantumCircuit) -> float:
+def calculate_fidelity(psi: Statevector, ideal: QuantumCircuit | Statevector | NPVector[np.float64]) -> float:
     # Calculate the exact non-noisy probability density function
-    pdf_ideal = calculate_pdf(circuit_ideal)
+    if isinstance(ideal, QuantumCircuit):
+        pdf_ideal = calculate_pdf(ideal)
+    elif isinstance(ideal, Statevector):
+        pdf_ideal = np.abs(ideal)**2
+    else:
+        pdf_ideal = ideal
 
     # Calculate the noisy probability density function from this shot
     pdf_noisy = np.abs(psi)**2
@@ -71,7 +76,8 @@ class FidelityFunctor:
         state: CircuitState
         fidelity: float
 
-    def __init__(self):
+    def __init__(self, circuit: QuantumCircuit | None = None):
+        self._pdf_ideal = calculate_pdf(circuit) if circuit is not None else None
         self._results = list[self.Result]()
         self._round_size: int = 0
 
@@ -79,7 +85,10 @@ class FidelityFunctor:
         self._round_size += 1
         try:
             psi = info.result.data(0)["psi"][0]  # First instance of psi in first shot (there will only be one of each)
-            fid = calculate_fidelity(psi, info.model.circuit)  # TODO: overload to accept precomputed ideal PDF
+            fid = calculate_fidelity(
+                psi,
+                self._pdf_ideal if self._pdf_ideal is not None else info.model.circuit,
+            )
             self._results.append(self.Result(info.state, fid))
         except KeyError:
             _logger.debug("No psi found in this shot! Using NaN.")  # TODO: is this because of erasure events?

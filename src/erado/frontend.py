@@ -170,7 +170,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
 
         fidelity_functor = None
         if get_fidelities:
-            callbacks.append(fidelity_functor := FidelityFunctor())
+            callbacks.append(fidelity_functor := FidelityFunctor(self.model.circuit))
             # TODO: should fidelity_functor be refactored to a private field?
 
         counts = self._run_once(backend, shots, callbacks, fidelity_functor)
