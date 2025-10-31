@@ -41,15 +41,16 @@ def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
 STATE_LABEL = "final_state"
 
 
-class FidelityFunctor:
-    @dataclass
-    class Result:
-        state: CircuitState
-        fidelity: float
+@dataclass
+class FidelityResult:
+    state: CircuitState
+    fidelity: float
 
+
+class FidelityFunctor:
     def __init__(self, circuit: QuantumCircuit | None):
         self._circuit_sv = calculate_statevector(circuit) if circuit is not None else None
-        self._results = list[self.Result]()
+        self._results = list[FidelityResult]()
         self._round_size: int = 0
 
     def __call__(self, info: ShotInfo) -> None:
@@ -61,24 +62,24 @@ class FidelityFunctor:
                 final_state,
                 self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
             )
-            self._results.append(self.Result(info.state, fid))
+            self._results.append(FidelityResult(info.state, fid))
         except KeyError:
             _logger.error(f"No {STATE_LABEL} found in this shot (state: {info.state}); using NaN for fidelity.")
-            self._results.append(self.Result(info.state, np.nan))
+            self._results.append(FidelityResult(info.state, np.nan))
 
     def new_round(self) -> None:
         self._round_size = 0
 
-    def _results_generator(self, start: int, stop: int) -> Generator[Result]:
+    def _results_generator(self, start: int, stop: int) -> Generator[FidelityResult]:
         for i in range(start, stop):
             yield self._results[i]
 
-    def results(self) -> Generator[Result]:
+    def results(self) -> Generator[FidelityResult]:
         yield from self._results_generator(
             0, len(self._results)
         )
 
-    def results_round(self) -> Generator[Result]:
+    def results_round(self) -> Generator[FidelityResult]:
         yield from self._results_generator(
             len(self._results) - self._round_size, len(self._results)
         )
