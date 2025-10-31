@@ -4,6 +4,7 @@
 from erado.models import (
     CircuitState,
     ShotInfo,
+    SNAPSHOT_GATES,
 )
 
 from qiskit import QuantumCircuit
@@ -31,7 +32,7 @@ def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
 
     # Also remove any snapshot calls (else constructing the `Statevector` will fail)
     for i in reversed(range(len(circuit_pure.data))):
-        if circuit_pure.data[i].operation.name in ["save_statevector", "save_density_matrix"]:
+        if circuit_pure.data[i].operation.name in SNAPSHOT_GATES:
             del circuit_pure.data[i]
 
     return Statevector(circuit_pure)

@@ -193,12 +193,20 @@ class ShotInfo:
     state: CircuitState
 
 
-EXEMPT_GATES = [
-    "barrier",
-    "measure",
+SNAPSHOT_GATES = [
     "save_statevector",
     "save_density_matrix",
 ]
+"""Circuit instructions recognised as supported state snapshots."""
+
+
+EXEMPT_GATES = (
+    [
+        "barrier",
+        "measure",
+    ]
+    + SNAPSHOT_GATES
+)
 """Circuit instructions which are never involved in erasure events."""
 
 

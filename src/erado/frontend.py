@@ -1,16 +1,21 @@
 """Provides a frontend class for using the erasure simulation models."""
 
+# TODO: Maybe I should indeed use atpublic? To avoid imported symbols?
 from erado.models import (
     ErasureModel,
     CircuitState,
     ShotCallback,
+    SNAPSHOT_GATES
 )
 from erado.util import (
     MultiprocessingRNG,
     NPVector,
     NPPydantic,
 )
-from erado.fidelity import FidelityFunctor
+from erado.fidelity import (
+    FidelityFunctor,
+    STATE_LABEL,
+)
 
 from qiskit.providers import BackendV2 as Backend
 
@@ -146,7 +151,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
             backend: Backend,
             shots: int,
             postselect: bool = False,
-            get_fidelities: bool = True,
+            get_fidelities: bool = False,
             **kwargs: object,
         ) -> ErasureSimResults:
         """Execute the simulation on a given backend for some number of shots.
@@ -172,6 +177,10 @@ class ErasureSimFrontend(MultiprocessingRNG):
 
         fidelity_functor = None
         if get_fidelities:
+            if not any((gate.name in SNAPSHOT_GATES and gate.label == STATE_LABEL
+                        for gate in self.model.circuit.data)):
+                raise ValueError(f"Cannot get fidelities without a snapshot gate labelled {STATE_LABEL}.")
+
             callbacks.append(fidelity_functor := FidelityFunctor(self.model.circuit))
             # TODO: should fidelity_functor be refactored to a private field?
 
