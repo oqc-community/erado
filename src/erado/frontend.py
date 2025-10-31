@@ -22,12 +22,13 @@ from collections import Counter
 
 class ErasureSimResults(pydantic.BaseModel):
     """Data structure of the results from an `ErasureSimFrontend` run."""
-    counts: Counter[CircuitState]
     shots: int
+    n_accepted: int
     n_rejected: int
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
+    counts: Counter[CircuitState]
     fidelity: NPPydantic[NPVector[np.float64]]
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
@@ -185,8 +186,11 @@ class ErasureSimFrontend(MultiprocessingRNG):
                 total_shots += n_remaining
                 n_rejected = self._count_rejected(counts)
                 n_remaining = shots - (total_shots - n_rejected)
+            n_accepted = total_shots - n_rejected
+        else:
+            n_accepted = total_shots
 
-        if total_shots - n_rejected != shots:
+        if n_accepted != shots:
             raise RuntimeError("The requested number of shots was exceeded or not reached.")
 
         fidelity_array = np.array([])
@@ -202,11 +206,12 @@ class ErasureSimFrontend(MultiprocessingRNG):
                                          count=shots)
 
         return ErasureSimResults(
-            counts=counts,
             shots=total_shots,
+            n_accepted=n_accepted,
             n_rejected=n_rejected,
             rejection_rate=n_rejected / total_shots,
             circuit_depth=self.model.circuit.depth(),
             n_erasable_gates=self.model.n_erasable_gates,
+            counts=counts,
             fidelity=fidelity_array,
         )
