@@ -197,6 +197,7 @@ EXEMPT_GATES = [
     "barrier",
     "measure",
     "save_statevector",
+    "save_density_matrix",
 ]
 """Circuit instructions which are never involved in erasure events."""
 
