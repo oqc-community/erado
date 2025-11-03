@@ -172,6 +172,11 @@ class ErasureSimFrontend(MultiprocessingRNG):
         where any qubits were erased (as per potentially-noisy end-of-line checks) are rejected.
         Further shots are generated via the `model` until the target number of shots are accepted.
 
+        The calculation of per-shot fidelities can be enabled with `get_fidelities`. If enabled,
+        there must exist a snapshot gate of the form `save_x` (i.e. one of the instructions
+        specified in `erado.models.SNAPSHOT_GATES`) saving the state with the label
+        `erado.fidelity.STATE_LABEL`.
+
         Args:
             backend: Circuit simulator backend.
             shots: Target number of shots.
@@ -181,6 +186,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
             **kwargs: Additional keyword arguments passed onto `ErasureModel.run`.
 
         Raises:
+            ValueError: If `get_fidelities` is true but the circuit has no appropriate `save_x`.
             RuntimeError: If the resultant number of shots does not equal the target for some reason.
 
         Returns:
