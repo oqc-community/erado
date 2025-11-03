@@ -49,6 +49,7 @@ from collections import Counter
 from collections.abc import (
     Callable,
     Generator,
+    Iterable,
 )
 from dataclasses import dataclass
 import os
@@ -186,12 +187,11 @@ class ErasureModel(Protocol):
         """Construct a model with a Qiskit circuit and uniform erasure rate."""
         ...
 
-    # TODO: make callbacks Iterable not list?
     def run(
             self,
             backend: Backend,
             shots: int,
-            callbacks: list[ShotCallback] = [],
+            callbacks: Iterable[ShotCallback] = [],
             **_
         ) -> Counter[CircuitState]:
         """Execute an erasure simulation using this model.
@@ -617,7 +617,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             self,
             backend: Backend,
             shots: int,
-            callbacks: list[ShotCallback] = [],
+            callbacks: Iterable[ShotCallback] = [],
             multiprocess: bool = True,
             **_
         ) -> Counter[CircuitState]:
@@ -676,7 +676,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             self,
             backend: Backend,
             shots: int,
-            callbacks: list[ShotCallback],
+            callbacks: Iterable[ShotCallback],
             start: int = 0,
         ) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
