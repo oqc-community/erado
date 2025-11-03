@@ -23,6 +23,7 @@ import pydantic
 import numpy as np
 
 from collections import Counter
+from multiprocessing.managers import SharedMemoryManager
 
 
 class ErasureSimResults(pydantic.BaseModel):
@@ -121,21 +122,31 @@ class ErasureSimFrontend(MultiprocessingRNG):
             self,
             backend: Backend,
             shots: int,
-            callbacks: list[ShotCallback],
             fidelity_functor: FidelityFunctor | None,
             model_kwargs: dict[str, object],
         ) -> Counter[CircuitState]:
+        callbacks: list[ShotCallback] = []
         if fidelity_functor is not None:
-            fidelity_functor.new_round()
+            callbacks.append(fidelity_functor)
 
         counts = self.model.run(backend, shots, callbacks, **model_kwargs)
 
         if self.noisy_checks:
             if fidelity_functor is not None:
+                # If using FidelityFunctor, use it as the source of truth for all observed states.
+                # Also, we must send the noise-inflicted states back into the generator.
+                # Sadly, the ugly try-while-True syntax seems both correct and unavoidable.
                 counts = Counter[CircuitState]()
-                for result in fidelity_functor.results_round():
-                    result.state = self._add_check_noise(result.state)
-                    counts[result.state] += 1
+                results = fidelity_functor.results()
+                try:
+                    _, state = next(results)
+                    while True:
+                        noisy_state = self._add_check_noise(state)
+                        counts[noisy_state] += 1
+                        _, state = results.send(noisy_state)
+                except StopIteration:
+                    pass
+
             else:
                 counts = Counter((self._add_check_noise(elt) for elt in counts.elements()))
 
@@ -166,6 +177,8 @@ class ErasureSimFrontend(MultiprocessingRNG):
             shots: Target number of shots.
             postselect: If true, postselect on negative erasure checks until the target number of
                 shots.
+            get_fidelities: If true, calculate and store per-shot fidelities.
+            **kwargs: Additional keyword arguments passed onto `ErasureModel.run`.
 
         Raises:
             RuntimeError: If the resultant number of shots does not equal the target for some reason.
@@ -173,46 +186,56 @@ class ErasureSimFrontend(MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        callbacks = list[ShotCallback]()
+        with SharedMemoryManager() as smm:
+            # A new FidelityFunctor is needed for each postselection round
+            # (as they are effectively distinct simulations, each one unaware of the last)
+            fidelity_functors = list[FidelityFunctor]()
 
-        fidelity_functor = None
-        if get_fidelities:
-            if not any((gate.name in SNAPSHOT_GATES and gate.label == STATE_LABEL
-                        for gate in self.model.circuit.data)):
-                raise ValueError(f"Cannot get fidelities without a snapshot gate labelled {STATE_LABEL}.")
+            fidelity_functor = None
+            if get_fidelities:
+                if not any((gate.name in SNAPSHOT_GATES and gate.label == STATE_LABEL
+                            for gate in self.model.circuit.data)):
+                    raise ValueError(f"Cannot get fidelities without a snapshot gate labelled {STATE_LABEL}.")
 
-            callbacks.append(fidelity_functor := FidelityFunctor(self.model.circuit))
-            # TODO: should fidelity_functor be refactored to a private field?
+                fidelity_functors.append(fidelity_functor := FidelityFunctor(shots, self.model.circuit, smm))
 
-        counts = self._run_once(backend, shots, callbacks, fidelity_functor, kwargs)
-        total_shots = shots
-        n_rejected = self._count_rejected(counts)
+            counts = self._run_once(backend, shots, fidelity_functor, kwargs)
+            total_shots = shots
+            n_rejected = self._count_rejected(counts)
 
-        if postselect:
-            n_remaining = n_rejected
-            while n_remaining > 0:
-                counts.update(self._run_once(backend, n_remaining, callbacks, fidelity_functor, kwargs))
-                total_shots += n_remaining
-                n_rejected = self._count_rejected(counts)
-                n_remaining = shots - (total_shots - n_rejected)
-            n_accepted = total_shots - n_rejected
-        else:
-            n_accepted = total_shots
-
-        if n_accepted != shots:
-            raise RuntimeError("The requested number of shots was exceeded or not reached.")
-
-        fidelity_array = np.array([])
-        if fidelity_functor is not None:
             if postselect:
-                generator = (result.fidelity for result in fidelity_functor.results()
-                             if "1" not in result.state.erasure)
-            else:
-                generator = (result.fidelity for result in fidelity_functor.results())
+                n_remaining = n_rejected
+                while n_remaining > 0:
+                    if get_fidelities:
+                        fidelity_functors.append(fidelity_functor := FidelityFunctor(n_remaining, self.model.circuit, smm))
 
-            fidelity_array = np.fromiter(generator,
-                                         dtype=np.float64,
-                                         count=shots)
+                    counts.update(self._run_once(backend, n_remaining, fidelity_functor, kwargs))
+                    total_shots += n_remaining
+                    n_rejected = self._count_rejected(counts)
+                    n_remaining = shots - (total_shots - n_rejected)
+                n_accepted = total_shots - n_rejected
+            else:
+                n_accepted = total_shots
+
+            if n_accepted != shots:
+                raise RuntimeError("The requested number of shots was exceeded or not reached.")
+
+            fidelity_array = np.array([])
+            if get_fidelities:
+                if postselect:
+                    # Aggregate accepted shots from all postselection rounds
+                    generator = (fidelity
+                                 for ff in fidelity_functors
+                                 for fidelity, state in ff.results()
+                                 if "1" not in state.erasure)
+                else:
+                    generator = (fidelity
+                                 for ff in fidelity_functors
+                                 for fidelity, _ in ff.results())
+
+                fidelity_array = np.fromiter(generator,
+                                             dtype=np.float64,
+                                             count=shots)
 
         return ErasureSimResults(
             shots=total_shots,

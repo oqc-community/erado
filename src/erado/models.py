@@ -149,11 +149,9 @@ class CircuitState(pydantic.BaseModel):
 
 def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
     counter = Counter[str]()
-    n = len(next(iter(counts)).erasure)
     for state, count in counts.items():
-        if state.erasure == "0"*n:
-            counter[state.measure] += count
-            # TODO: here += can be replaced with =?
+        if "1" not in state.erasure:
+            counter[state.measure] = count
     return counter
 
 
@@ -196,7 +194,7 @@ class ErasureModel(Protocol):
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
         """
-        # NOTE: This signature enforces **_ to allow ignoring unused kwargs.
+        # NOTE: This signature enforces **_ to make sure all models can ignore unused kwargs.
         ...
 
 
@@ -205,6 +203,8 @@ class ShotInfo:
     model: ErasureModel
     result: qiskit.result.Result
     state: CircuitState
+    i: int
+    start: int
 
 
 SNAPSHOT_GATES = [
@@ -640,8 +640,14 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                 ) as executor:
                 max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
-                counters_futures = [executor.submit(self._run, backend, shots_each, callbacks) for _ in range(max_workers - 1)]
-                counters_futures.append(executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks))
+                counters_futures = [
+                    executor.submit(self._run, backend, shots_each, callbacks, i * shots_each)
+                    for i in range(max_workers - 1)
+                ]
+                counters_futures.append(
+                    executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks,
+                                    (max_workers - 1) * shots_each)
+                )
 
                 for counter in as_completed(counters_futures):
                     counts += counter.result()
@@ -654,11 +660,17 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
                         for key, value in counts.items()})
 
-    def _run(self, backend: Backend, shots: int, callbacks: list[ShotCallback]) -> Counter[str]:
+    def _run(
+            self,
+            backend: Backend,
+            shots: int,
+            callbacks: list[ShotCallback],
+            start: int = 0,
+        ) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
         with ThreadPoolExecutor(max_workers=1) as executor:
             def all_shots() -> Generator[str]:
-                for _ in range(shots):
+                for i in range(shots):
                     circuit, _, erased_qubits = self.sample()
 
                     future = executor.submit(lambda: backend.run(
@@ -688,6 +700,8 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                             self,
                             result,
                             CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                            i,
+                            start,
                         ))
 
                     yield state

@@ -1,4 +1,4 @@
-# TODO: Support multiprocessing (via shared memory or similar).
+"""Provides fidelity calculation as a per-shot callback."""
 # TODO: Don't forget to update all signatures/docstrings etc.
 
 from erado.models import (
@@ -17,7 +17,7 @@ from qiskit.quantum_info import (
 import numpy as np
 
 from collections.abc import Generator
-from dataclasses import dataclass
+from multiprocessing.managers import SharedMemoryManager
 import logging
 
 
@@ -25,6 +25,20 @@ _logger = logging.getLogger(__name__)
 
 
 def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
+    """Get the statevector representing the final state of a quantum circuit.
+
+    Any final measurements and snapshot gates are removed for the purposes of calculating the final
+    statevector (this does _not_ modify the provided circuit in-place).
+
+    Args:
+        circuit: Quantum circuit.
+
+    Raises:
+        RuntimeError: If qiskit does not successfully remove final measurements.
+
+    Returns:
+        Statevector of circuit.
+    """
     # Remove any final measurements (we want the final state of the circuit before observation)
     circuit_pure = circuit.remove_final_measurements(inplace=False)
     if circuit_pure is None:
@@ -39,22 +53,60 @@ def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
 
 
 STATE_LABEL = "final_state"
-
-
-@dataclass
-class FidelityResult:
-    state: CircuitState
-    fidelity: float
+"""Default key for snapshot gate data expected by `FidelityFunctor`."""
 
 
 class FidelityFunctor:
-    def __init__(self, circuit: QuantumCircuit | None):
+    """Function object implementing `ShotCallback` to gather per-shot fidelity data.
+
+    If provided as a `ShotCallback`, this function object calculates and stores the fidelity
+    (along with the associated state) of each shot. These can then be accessed (and mutated) by the
+    `results` generator method.
+    """
+    def __init__(
+            self,
+            shots: int,
+            circuit: QuantumCircuit | None = None,
+            smm: SharedMemoryManager | None = None,
+        ):
+        """Construct a new `FidelityFunctor`.
+
+        The number of shots must be provided in order to preallocate the correct amount of memory
+        to store the results.
+
+        If a `SharedMemoryManager` dependency is injected, the results are stored in shared memory
+        such that this functor is compatible with multiprocessing-enabled simulations.
+
+        If possible, the quantum circuit should be provided, so that
+        1) the circuit's ideal statevector is calculated once and cached, and
+        2) it is guaranteed that no more or less shared memory than necessary is allocated for
+            `CircuitState` representation.
+
+        If a circuit is not provided, the fallback default allocation supports up to 64 qubits.
+
+        Args:
+            shots: Number of shots to be executed.
+            circuit: Circuit to be used in simulation.
+            smm: `SharedMemoryManager` instance to enable multiprocessing support.
+        """
+        n_qubits = circuit.num_qubits if circuit is not None else 64
+
+        if smm is not None:
+            self._fidelities = smm.ShareableList([float() for _ in range(shots)])
+            self._states = smm.ShareableList([" " * n_qubits * 2 for _ in range(shots)])
+        else:
+            self._fidelities = [float() for _ in range(shots)]
+            self._states = [str() for _ in range(shots)]
+
         self._circuit_sv = calculate_statevector(circuit) if circuit is not None else None
-        self._results = list[FidelityResult]()
-        self._round_size: int = 0
 
     def __call__(self, info: ShotInfo) -> None:
-        self._round_size += 1
+        """Implement `ShotCallback`.
+
+        Args:
+            info: Shot information.
+        """
+        index = info.start + info.i
         try:
             # First instance of final_state in first shot (there will only be one of each)
             final_state: Statevector | DensityMatrix = info.result.data(0)[STATE_LABEL][0]
@@ -62,24 +114,25 @@ class FidelityFunctor:
                 final_state,
                 self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
             )
-            self._results.append(FidelityResult(info.state, fid))
+            self._fidelities[index] = fid
+            self._states[index] = str(info.state)
         except KeyError:
             _logger.error(f"No {STATE_LABEL} found in this shot (state: {info.state}); using NaN for fidelity.")
-            self._results.append(FidelityResult(info.state, np.nan))
+            self._fidelities[index] = np.nan
+            self._states[index] = str(info.state)
 
-    def new_round(self) -> None:
-        self._round_size = 0
+    def results(self) -> Generator[tuple[float, CircuitState], CircuitState, None]:
+        """Iterate through all stored results.
 
-    def _results_generator(self, start: int, stop: int) -> Generator[FidelityResult]:
-        for i in range(start, stop):
-            yield self._results[i]
+        Optionally supports `CircuitState` as a `SendType` in order to mutate the previously-yielded
+        state, e.g. to inflict erasure check noise.
 
-    def results(self) -> Generator[FidelityResult]:
-        yield from self._results_generator(
-            0, len(self._results)
-        )
-
-    def results_round(self) -> Generator[FidelityResult]:
-        yield from self._results_generator(
-            len(self._results) - self._round_size, len(self._results)
-        )
+        Yields:
+            Tuple of fidelity and `CircuitState` corresponding to each shot.
+        """
+        for i in range(len(self._fidelities)):
+            new_state = yield self._fidelities[i], CircuitState.from_string(self._states[i])
+            if new_state is not None:
+                self._states[i] = str(new_state)
+        # TODO: try dummy yield with type ignore?
+        # TODO: try model_construct for trusted data?
