@@ -43,9 +43,9 @@ def test_deserialise(state_str: str, expected: tuple[str, str]):
     ("0 "*N + "1 "*N, ("0"*N, "1"*N)),  # Arbitrary whitespace from qiskit
     ("0"*N + "1"*2, ("0"*N, "1"*2))     # Measure only some qubits
 ])
-def test_from_string(state_str: str, expected: tuple[str, str]):
+def test_from_qiskit_string(state_str: str, expected: tuple[str, str]):
     """Test that `CircuitState` correctly constructs from a Qiskit results string."""
-    state = CircuitState.from_string(state_str, N)
+    state = CircuitState.from_qiskit_string(state_str, N)
     assert isinstance(state, CircuitState)
     assert state.erasure == expected[0]
     assert state.measure == expected[1]

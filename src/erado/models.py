@@ -72,7 +72,7 @@ class CircuitState(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(frozen=True)  # 'frozen' makes this struct immutable and hashable
 
     @classmethod
-    def from_string(cls, state: str, n_qubits: int) -> Self:
+    def from_qiskit_string(cls, state: str, n_qubits: int) -> Self:
         """Construct a `CircuitState` from a binary string representation.
 
         The string is expected to be in the format yielded by a Qiskit simulation backend. For a
@@ -89,6 +89,21 @@ class CircuitState(pydantic.BaseModel):
         state = state.replace(" ", "")
         erasure = state[:n_qubits]
         measure = state[n_qubits:]
+        return cls(erasure=erasure, measure=measure)
+
+    @classmethod
+    def from_string(cls, state: str) -> Self:
+        """Construct a `CircuitState` from a binary string representation.
+
+        The string is expected to be in the format yielded by `__str__`.
+
+        Args:
+            state: Binary string representing state.
+
+        Returns:
+            New `CircuitState` instance.
+        """
+        erasure, measure = state.split(",", 1)
         return cls(erasure=erasure, measure=measure)
 
     @override
@@ -126,8 +141,7 @@ class CircuitState(pydantic.BaseModel):
         """
         if isinstance(value, str):
             try:
-                erasure, measure = value.split(",", 1)
-                return cls(erasure=erasure, measure=measure)
+                return cls.from_string(value)
             except ValueError:
                 raise ValueError("Could not deserialise CircuitState from string.")
         return handler(value)
@@ -452,7 +466,7 @@ class ErasurePassJob:
 
         counts = result.get_counts()
 
-        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
+        return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
                         for key, value in counts.items()})
 
 
@@ -637,7 +651,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        return Counter({CircuitState.from_string(key, self.circuit.num_qubits): value
+        return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
                         for key, value in counts.items()})
 
     def _run(self, backend: Backend, shots: int, callbacks: list[ShotCallback]) -> Counter[str]:
@@ -673,7 +687,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                         callback(ShotInfo(
                             self,
                             result,
-                            CircuitState.from_string(state, self.circuit.num_qubits),
+                            CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                         ))
 
                     yield state
