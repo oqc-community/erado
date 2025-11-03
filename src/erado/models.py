@@ -49,7 +49,7 @@ from collections import Counter
 from collections.abc import (
     Callable,
     Generator,
-    Iterable,
+    Sequence,
 )
 from dataclasses import dataclass
 import os
@@ -191,7 +191,7 @@ class ErasureModel(Protocol):
             self,
             backend: Backend,
             shots: int,
-            callbacks: Iterable[ShotCallback] = [],
+            callbacks: Sequence[ShotCallback] = [],
             **_
         ) -> Counter[CircuitState]:
         """Execute an erasure simulation using this model.
@@ -214,8 +214,9 @@ class ShotInfo:
     model: ErasureModel
     result: qiskit.result.Result
     state: CircuitState
-    i: int
-    start: int
+    i: int         # Shot number within this process
+    start: int     # Initial global index of this process
+    i_result: int  # Shot number within the qiskit Result
 
 
 SNAPSHOT_GATES = [
@@ -416,6 +417,20 @@ class ErasurePassJob:
         pm = PassManager([ep])
         self._circuit_erasure = pm.run(circuit)
 
+        # Ensure that snapshot gates correctly apply to all qubits despite new ERASER_QREG
+        for i, gate in enumerate(self._circuit_erasure.data):
+            if gate.name in SNAPSHOT_GATES:
+                gate.operation.num_qubits = self._circuit_erasure.num_qubits
+
+                # Ensure the new instruction is correct by appending it, then move it to overwrite
+                # the old one.
+                self._circuit_erasure.append(
+                    gate.operation,
+                    self._circuit_erasure.qubits,
+                )
+                self._circuit_erasure.data[i] = self._circuit_erasure.data[-1]
+                del self._circuit_erasure.data[-1]
+
         self._n_erasable_gates = ep.n_erasable_gates
 
     @property
@@ -443,7 +458,13 @@ class ErasurePassJob:
         """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
         return self._n_erasable_gates
 
-    def run(self, backend: Backend, shots: int) -> Counter[CircuitState]:
+    def run(
+            self,
+            backend: Backend,
+            shots: int,
+            callbacks: Sequence[ShotCallback] = [],
+            **_
+        ) -> Counter[CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
         This method temporarily replaces the backend's noise model with a copy with
@@ -456,6 +477,7 @@ class ErasurePassJob:
         Args:
             backend: Circuit simulator backend.
             shots: Number of shots.
+            callbacks: Collection of per-shot callback functions.
 
         Raises:
             TypeError: If the backend is not an `AerSimulator`.
@@ -471,8 +493,27 @@ class ErasurePassJob:
         add_erasure_noise(nm_new, self.circuit_erasure, self.erasure_rate)
         setattr(backend.options, "noise_model", nm_new)
 
-        result = backend.run(self.circuit_erasure, shots=shots).result()
+        result = backend.run(
+            self.circuit_erasure,
+            shots=shots,
+            memory=len(callbacks) > 0,
+        ).result()
 
+        if len(callbacks) > 0:
+            memory: list[str] = result.get_memory(self.circuit_erasure)
+
+            for i, state in enumerate(memory):
+                for callback in callbacks:
+                    callback(ShotInfo(
+                        self,
+                        result,
+                        CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                        i,
+                        0,
+                        i,
+                    ))
+
+        # Restore original state of backend's noise model
         setattr(backend.options, "noise_model", nm_old)
 
         counts = result.get_counts()
@@ -550,7 +591,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         """Iterate through all erasable gates in the circuit.
 
         Yields:
-            tuple[int,CircuitInstruction]: Index and instruction for each erasable gate.
+            Tuple of index and instruction for each erasable gate.
         """
         return ((i, g) for i, g in enumerate(self.circuit.data)
                 if g.name not in EXEMPT_GATES)
@@ -617,7 +658,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             self,
             backend: Backend,
             shots: int,
-            callbacks: Iterable[ShotCallback] = [],
+            callbacks: Sequence[ShotCallback] = [],
             multiprocess: bool = True,
             **_
         ) -> Counter[CircuitState]:
@@ -676,7 +717,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             self,
             backend: Backend,
             shots: int,
-            callbacks: Iterable[ShotCallback],
+            callbacks: Sequence[ShotCallback],
             start: int = 0,
         ) -> Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
@@ -714,6 +755,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                             CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                             i,
                             start,
+                            0,
                         ))
 
                     yield state

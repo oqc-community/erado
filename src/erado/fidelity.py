@@ -108,8 +108,7 @@ class FidelityFunctor:
         """
         index = info.start + info.i
         try:
-            # First instance of final_state in first shot (there will only be one of each)
-            final_state: Statevector | DensityMatrix = info.result.data(0)[STATE_LABEL][0]
+            final_state: Statevector | DensityMatrix = info.result.data(0)[STATE_LABEL][info.i_result]
             fid = state_fidelity(
                 final_state,
                 self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
