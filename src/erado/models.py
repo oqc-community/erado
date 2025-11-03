@@ -148,6 +148,14 @@ class CircuitState(pydantic.BaseModel):
 
 
 def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
+    """Filter a state counter to only non-erased states.
+
+    Args:
+        counts: `CircuitState` counter.
+
+    Returns:
+        Counter of non-erased measurement states.
+    """
     counter = Counter[str]()
     for state, count in counts.items():
         if "1" not in state.erasure:
@@ -156,6 +164,7 @@ def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
 
 
 type ShotCallback = Callable[[ShotInfo], None]
+"""Per-shot callback function type."""
 
 
 class ErasureModel(Protocol):
@@ -190,6 +199,7 @@ class ErasureModel(Protocol):
         Args:
             backend: Circuit simulator backend.
             shots: Number of shots.
+            callbacks: Collection of per-shot callback functions.
 
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
@@ -200,6 +210,7 @@ class ErasureModel(Protocol):
 
 @dataclass(frozen=True)
 class ShotInfo:
+    """Data structure of per-shot information provided to callbacks."""
     model: ErasureModel
     result: qiskit.result.Result
     state: CircuitState
@@ -623,6 +634,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         Args:
             backend: Circuit simulator backend.
             shots: Number of shots.
+            callbacks: Collection of per-shot callback functions.
             multiprocess: If true, parallelise the workload over multiple processes.
 
         Raises:
