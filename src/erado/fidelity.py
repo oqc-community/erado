@@ -1,5 +1,4 @@
 """Provides fidelity calculation as a per-shot callback."""
-# TODO: Don't forget to update all signatures/docstrings etc.
 
 from erado.models import (
     CircuitState,
@@ -109,10 +108,16 @@ class FidelityFunctor:
         index = info.start + info.i
         try:
             final_state: Statevector | DensityMatrix = info.result.data(0)[STATE_LABEL][info.i_result]
-            fid = state_fidelity(
-                final_state,
-                self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
-            )
+            ideal_state = self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
+
+            # If there is one extra qubit, assume it is ERASER_QREG, which is always left in the 0 state
+            if ideal_state.num_qubits is not None and final_state.num_qubits == ideal_state.num_qubits + 1:
+                ideal_state = Statevector([1, 0]).tensor(ideal_state)
+                if self._circuit_sv is not None:
+                    self._circuit_sv = ideal_state
+                    _logger.info("Observed state has 1 extra qubit; assuming ERASER_QREG and expanding for future shots.")
+
+            fid = state_fidelity(final_state, ideal_state)
             self._fidelities[index] = fid
             self._states[index] = str(info.state)
         except KeyError:
