@@ -11,6 +11,7 @@ from erado.util import (
     working_directory,
 )
 import erado.circuits as circuits
+import erado.fidelity as fidelity
 
 from qiskit import generate_preset_pass_manager
 from qiskit_aer import AerSimulator
@@ -35,14 +36,16 @@ import csv
 ROOT_DIR = Path("data")
 FIGURE_DIR = Path("figures")
 
+DELETE_DATA = False
+
 
 @dataclass
 class NoiseParams():
-    erasure_rate: float = 0
-    false_positive_rate: float = 0
-    false_negative_rate: float = 0
-    gate_error_1Q: float = 0
-    gate_error_2Q: float = 0
+    erasure_rate: float = 0.0
+    false_positive_rate: float = 0.0
+    false_negative_rate: float = 0.0
+    gate_error_1Q: float = 0.0
+    gate_error_2Q: float = 0.0
 
 
 def run_simulation(
@@ -54,6 +57,9 @@ def run_simulation(
     print(f"n = {n}")
 
     circuit = circuits.qft_linear(n)
+    # circuit = circuits.ghz(n)
+    circuit.save_statevector(label=fidelity.STATE_LABEL, pershot=True)  # type: ignore # Dynamically patched by qiksit-aer
+    # circuit.save_density_matrix(label=fidelity.STATE_LABEL, pershot=True)  # type: ignore # Dynamically patched by qiksit-aer
     circuit.measure_all()
     if print_circuits:
         print("Raw circuit:")
@@ -76,6 +82,7 @@ def run_simulation(
 
     print(noise_model)
     backend = AerSimulator(method="statevector", device="GPU", noise_model=noise_model)
+    # backend = AerSimulator(method="density_matrix", device="GPU", noise_model=noise_model)
 
     # Transpile circuit for the above basis gates
     pass_manager = generate_preset_pass_manager(backend=backend)
@@ -96,7 +103,13 @@ def run_simulation(
                                   false_negative_rate=noise_params.false_negative_rate)
 
     t0 = time.time()
-    results = frontend.run(backend, shots, postselect=True)
+    results = frontend.run(
+        backend,
+        shots,
+        postselect=True,
+        get_fidelities=True,
+        # multiprocess=False,
+    )
     t1 = time.time()
     dt = t1 - t0
 
@@ -160,7 +173,9 @@ def example_QFT_sweep(plot_error_bars=True):
     rejection_rate = get_series(results_list, "rejection_rate")
     circuit_depth = get_series(results_list, "circuit_depth")
     n_erasable_gates = get_series(results_list, "n_erasable_gates")
-    fidelity = get_series(results_list, "fidelity")
+
+    n_accepted = results_list[0].n_accepted
+    fidelity = get_series(results_list, "fidelity", n_accepted)
 
     if plot_error_bars:
         yerr = np.apply_along_axis(lambda row: np.abs(row - rejection_rate), 1, intervals)
@@ -209,8 +224,17 @@ def example_QFT_sweep(plot_error_bars=True):
         fig5.savefig("figure5.pdf")
         fig5.savefig("figure5.png")
 
+
+        mean_fidelity = np.mean(fidelity, axis=1)
+        max_fidelity = np.max(fidelity, axis=1)
+        min_fidelity = np.min(fidelity, axis=1)
+
         fig6, ax6 = plt.subplots(1)
-        ax6.plot(num_qubits, fidelity, "x-")
+        ax6.plot(num_qubits, mean_fidelity, "x-", label="mean")
+        ax6.plot(num_qubits, max_fidelity, "x-", label="max")
+        ax6.plot(num_qubits, min_fidelity, "x-", label="min")
+        ax6.legend()
+        ax6.set_ylim(-0.1, 1.1)
         ax6.set_xlabel("Number of qubits, n")
         ax6.set_ylabel("Fidelity")
         fig6.savefig("figure6.pdf")
@@ -327,6 +351,35 @@ def plot_times():
 if __name__ == "__main__":
     matplotlib.rcParams["savefig.dpi"] = 300
     matplotlib.rcParams["savefig.bbox"] = "tight"
+
+    # Configure logging
+    import logging
+    FORMAT = "[%(filename)11s:%(lineno)3s %(funcName)20s()] %(message)s"
+    logging.basicConfig(format=FORMAT)
+
+    logger = logging.getLogger("erado")
+    logger.setLevel(logging.DEBUG)
+
+    # Delete data for fresh simulation
+    if DELETE_DATA and ROOT_DIR.exists():
+        from collections.abc import Generator
+        def all_files(p: Path) -> Generator[Path]:
+            for child in p.iterdir():
+                if child.is_dir():
+                    yield from all_files(child)
+                else:
+                    yield child
+        def all_dirs(p: Path) -> Generator[Path]:
+            for child in p.iterdir():
+                if child.is_dir():
+                    yield from all_dirs(child)
+                    yield child
+
+        for file in all_files(ROOT_DIR):
+            file.unlink()
+        for dir in all_dirs(ROOT_DIR):
+            dir.rmdir()
+        ROOT_DIR.rmdir()
 
     with working_directory(ROOT_DIR):
         # example_QFT()
