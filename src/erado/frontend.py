@@ -134,17 +134,12 @@ class ErasureSimFrontend(MultiprocessingRNG):
             if fidelity_functor is not None:
                 # If using FidelityFunctor, use it as the source of truth for all observed states.
                 # Also, we must send the noise-inflicted states back into the generator.
-                # Sadly, the ugly try-while-True syntax seems both correct and unavoidable.
                 counts = Counter[CircuitState]()
                 results = fidelity_functor.results()
-                try:
-                    _, state = next(results)
-                    while True:
-                        noisy_state = self._add_check_noise(state)
-                        counts[noisy_state] += 1
-                        _, state = results.send(noisy_state)
-                except StopIteration:
-                    pass
+                for _, state in results:
+                    noisy_state = self._add_check_noise(state)
+                    counts[noisy_state] += 1
+                    results.send(noisy_state)
 
             else:
                 counts = Counter((self._add_check_noise(elt) for elt in counts.elements()))

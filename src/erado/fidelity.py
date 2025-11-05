@@ -128,8 +128,10 @@ class FidelityFunctor:
     def results(self) -> Generator[tuple[float, CircuitState], CircuitState, None]:
         """Iterate through all stored results.
 
-        Optionally supports `CircuitState` as a `SendType` in order to mutate the previously-yielded
-        state, e.g. to inflict erasure check noise.
+        Optionally supports `CircuitState` as a `SendType` in order to mutate the
+        previously-yielded state, e.g. to inflict erasure check noise. If a value is sent, the next
+        value yielded will be a repeat of the sent value, such that this generator can be used
+        elegantly in a for-loop regardless of whether new values are sent in the loop body.
 
         Yields:
             Tuple of fidelity and `CircuitState` corresponding to each shot.
@@ -138,5 +140,4 @@ class FidelityFunctor:
             new_state = yield self._fidelities[i], CircuitState.from_string(self._states[i])
             if new_state is not None:
                 self._states[i] = str(new_state)
-        # TODO: try dummy yield with type ignore?
-        # TODO: try model_construct for trusted data?
+                yield self._fidelities[i], new_state
