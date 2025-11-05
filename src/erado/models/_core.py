@@ -1,5 +1,5 @@
 from qiskit import QuantumCircuit
-from qiskit.providers import BackendV2 as Backend
+from qiskit.providers import BackendV2
 import qiskit.result
 
 import pydantic
@@ -146,7 +146,7 @@ class ErasureModel(Protocol):
 
     def run(
             self,
-            backend: Backend,
+            backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
             **_

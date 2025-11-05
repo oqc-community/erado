@@ -15,7 +15,7 @@ from qiskit.circuit import (
     Qubit,
     CircuitInstruction,
 )
-from qiskit.providers import BackendV2 as Backend
+from qiskit.providers import BackendV2
 
 import numpy as np
 
@@ -172,7 +172,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def run(
             self,
-            backend: Backend,
+            backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
             multiprocess: bool = True,
@@ -231,7 +231,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def _run(
             self,
-            backend: Backend,
+            backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback],
             start: int = 0,

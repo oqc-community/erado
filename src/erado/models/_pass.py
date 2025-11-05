@@ -17,7 +17,7 @@ from qiskit.circuit import (
 from qiskit.transpiler import PassManager
 from qiskit.transpiler.basepasses import TransformationPass
 from qiskit.dagcircuit import DAGCircuit
-from qiskit.providers import BackendV2 as Backend
+from qiskit.providers import BackendV2
 
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import (
@@ -256,7 +256,7 @@ class ErasurePassJob:
 
     def run(
             self,
-            backend: Backend,
+            backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
             **_

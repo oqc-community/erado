@@ -1,23 +1,12 @@
 """Provides a frontend class for using the erasure simulation models."""
 
-# TODO: Maybe I should indeed use atpublic? To avoid imported symbols?
-from erado.models import (
-    ErasureModel,
-    CircuitState,
-    ShotCallback,
-    SNAPSHOT_GATES
-)
-from erado.util import (
-    MultiprocessingRNG,
-    NPVector,
-    NPPydantic,
-)
-from erado.fidelity import (
-    FidelityFunctor,
-    STATE_LABEL,
+from erado import (
+    models,
+    util,
+    fidelity,
 )
 
-from qiskit.providers import BackendV2 as Backend
+import qiskit.providers
 
 import pydantic
 import numpy as np
@@ -34,13 +23,13 @@ class ErasureSimResults(pydantic.BaseModel):
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
-    counts: Counter[CircuitState]
-    fidelity: NPPydantic[NPVector[np.float64]]
+    counts: Counter[models.CircuitState]
+    fidelity: util.NPPydantic[util.NPVector[np.float64]]
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
 
 
-class ErasureSimFrontend(MultiprocessingRNG):
+class ErasureSimFrontend(util.MultiprocessingRNG):
     """Erasure simulation frontend supporting any `ErasureModel`.
 
     This utility adds logic for postselection on end-of-line (EOL) erasure checks, as well as noise
@@ -50,7 +39,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
     """
     def __init__(
             self,
-            model: ErasureModel,
+            model: models.ErasureModel,
             noisy_checks: bool = False,
             false_positive_rate: float = 0,
             false_negative_rate: float = 0
@@ -69,7 +58,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
         self._false_negative_rate = false_negative_rate
 
     @property
-    def model(self) -> ErasureModel:
+    def model(self) -> models.ErasureModel:
         """`ErasureModel` used to construct this `ErasureSimFrontend`."""
         return self._model
 
@@ -98,7 +87,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
         bits = self._rng.binomial(1, p, self.n_qubits)
         return int("".join(str(bit) for bit in bits), 2)
 
-    def _add_check_noise(self, state: CircuitState) -> CircuitState:
+    def _add_check_noise(self, state: models.CircuitState) -> models.CircuitState:
         # Represent erasure state as bitstring
         x = int(state.erasure, 2)
 
@@ -115,16 +104,16 @@ class ErasureSimFrontend(MultiprocessingRNG):
         x_noisy = x ^ e_false_neg ^ e_false_pos
         x_noisy_str = format(x_noisy, f"0{self.n_qubits}b")
 
-        return CircuitState(erasure=x_noisy_str, measure=state.measure)
+        return models.CircuitState(erasure=x_noisy_str, measure=state.measure)
 
     def _run_once(
             self,
-            backend: Backend,
+            backend: qiskit.providers.BackendV2,
             shots: int,
-            fidelity_functor: FidelityFunctor | None,
+            fidelity_functor: fidelity.FidelityFunctor | None,
             model_kwargs: dict[str, object],
-        ) -> Counter[CircuitState]:
-        callbacks: list[ShotCallback] = []
+        ) -> Counter[models.CircuitState]:
+        callbacks: list[models.ShotCallback] = []
         if fidelity_functor is not None:
             callbacks.append(fidelity_functor)
 
@@ -134,7 +123,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
             if fidelity_functor is not None:
                 # If using FidelityFunctor, use it as the source of truth for all observed states.
                 # Also, we must send the noise-inflicted states back into the generator.
-                counts = Counter[CircuitState]()
+                counts = Counter[models.CircuitState]()
                 results = fidelity_functor.results()
                 for _, state in results:
                     noisy_state = self._add_check_noise(state)
@@ -146,14 +135,14 @@ class ErasureSimFrontend(MultiprocessingRNG):
 
         return counts
 
-    def _count_rejected(self, counts: Counter[CircuitState]) -> int:
+    def _count_rejected(self, counts: Counter[models.CircuitState]) -> int:
         return sum((count
                     for state, count in counts.items()
                     if state.erasure != "0"*self.n_qubits))
 
     def run(
             self,
-            backend: Backend,
+            backend: qiskit.providers.BackendV2,
             shots: int,
             postselect: bool = False,
             get_fidelities: bool = False,
@@ -189,15 +178,15 @@ class ErasureSimFrontend(MultiprocessingRNG):
         with SharedMemoryManager() as smm:
             # A new FidelityFunctor is needed for each postselection round
             # (as they are effectively distinct simulations, each one unaware of the last)
-            fidelity_functors = list[FidelityFunctor]()
+            fidelity_functors = list[fidelity.FidelityFunctor]()
 
             fidelity_functor = None
             if get_fidelities:
-                if not any((gate.name in SNAPSHOT_GATES and gate.label == STATE_LABEL
+                if not any((gate.name in models.SNAPSHOT_GATES and gate.label == fidelity.STATE_LABEL
                             for gate in self.model.circuit.data)):
-                    raise ValueError(f"Cannot get fidelities without a snapshot gate labelled {STATE_LABEL}.")
+                    raise ValueError(f"Cannot get fidelities without a snapshot gate labelled {fidelity.STATE_LABEL}.")
 
-                fidelity_functors.append(fidelity_functor := FidelityFunctor(shots, self.model.circuit, smm))
+                fidelity_functors.append(fidelity_functor := fidelity.FidelityFunctor(shots, self.model.circuit, smm))
 
             counts = self._run_once(backend, shots, fidelity_functor, kwargs)
             total_shots = shots
@@ -207,7 +196,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
                 n_remaining = n_rejected
                 while n_remaining > 0:
                     if get_fidelities:
-                        fidelity_functors.append(fidelity_functor := FidelityFunctor(n_remaining, self.model.circuit, smm))
+                        fidelity_functors.append(fidelity_functor := fidelity.FidelityFunctor(n_remaining, self.model.circuit, smm))
 
                     counts.update(self._run_once(backend, n_remaining, fidelity_functor, kwargs))
                     total_shots += n_remaining

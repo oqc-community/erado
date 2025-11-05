@@ -1,10 +1,10 @@
 """Provides a selection of quantum circuits for benchmarking."""
 
-from qiskit import QuantumCircuit
-import qiskit.synthesis as synthesis
+import qiskit
+from qiskit import synthesis
 
 
-def ghz(n: int) -> QuantumCircuit:
+def ghz(n: int) -> qiskit.QuantumCircuit:
     """Greenberger-Horne-Zeilinger (GHZ) state preparation.
 
     Args:
@@ -13,7 +13,7 @@ def ghz(n: int) -> QuantumCircuit:
     Returns:
         Qiskit quantum circuit.
     """
-    qc = QuantumCircuit(n)
+    qc = qiskit.QuantumCircuit(n)
     qc.h(0)
     for i in range(n - 1):
         qc.cx(i, i + 1)
@@ -21,7 +21,7 @@ def ghz(n: int) -> QuantumCircuit:
     return qc
 
 
-def qft_full(n: int) -> QuantumCircuit:
+def qft_full(n: int) -> qiskit.QuantumCircuit:
     """Quantum Fourier transform (QFT) on all-to-all connectivity.
 
     This directly invokes `qiskit.synthesis.synth_qft_full`.
@@ -35,7 +35,7 @@ def qft_full(n: int) -> QuantumCircuit:
     return synthesis.synth_qft_full(n)
 
 
-def qft_linear(n: int) -> QuantumCircuit:
+def qft_linear(n: int) -> qiskit.QuantumCircuit:
     """Quantum Fourier transform (QFT) on linear connectivity.
 
     This directly invokes `qiskit.synthesis.synth_qft_line`, which uses a construction based on

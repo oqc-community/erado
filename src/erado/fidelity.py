@@ -1,17 +1,9 @@
 """Provides fidelity calculation as a per-shot callback."""
 
-from erado.models import (
-    CircuitState,
-    ShotInfo,
-    SNAPSHOT_GATES,
-)
+from erado import models
 
-from qiskit import QuantumCircuit
-from qiskit.quantum_info import (
-    Statevector,
-    DensityMatrix,
-    state_fidelity,
-)
+import qiskit
+from qiskit import quantum_info
 
 import numpy as np
 
@@ -23,7 +15,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
+def calculate_statevector(circuit: qiskit.QuantumCircuit) -> quantum_info.Statevector:
     """Get the statevector representing the final state of a quantum circuit.
 
     Any final measurements and snapshot gates are removed for the purposes of calculating the final
@@ -45,10 +37,10 @@ def calculate_statevector(circuit: QuantumCircuit) -> Statevector:
 
     # Also remove any snapshot calls (else constructing the `Statevector` will fail)
     for i in reversed(range(len(circuit_pure.data))):
-        if circuit_pure.data[i].operation.name in SNAPSHOT_GATES:
+        if circuit_pure.data[i].operation.name in models.SNAPSHOT_GATES:
             del circuit_pure.data[i]
 
-    return Statevector(circuit_pure)
+    return quantum_info.Statevector(circuit_pure)
 
 
 STATE_LABEL = "final_state"
@@ -65,7 +57,7 @@ class FidelityFunctor:
     def __init__(
             self,
             shots: int,
-            circuit: QuantumCircuit | None = None,
+            circuit: qiskit.QuantumCircuit | None = None,
             smm: SharedMemoryManager | None = None,
         ):
         """Construct a new `FidelityFunctor`.
@@ -99,7 +91,7 @@ class FidelityFunctor:
 
         self._circuit_sv = calculate_statevector(circuit) if circuit is not None else None
 
-    def __call__(self, info: ShotInfo) -> None:
+    def __call__(self, info: models.ShotInfo) -> None:
         """Implement `ShotCallback`.
 
         Args:
@@ -107,17 +99,17 @@ class FidelityFunctor:
         """
         index = info.start + info.i
         try:
-            final_state: Statevector | DensityMatrix = info.result.data(0)[STATE_LABEL][info.i_result]
+            final_state: quantum_info.Statevector | quantum_info.DensityMatrix = info.result.data(0)[STATE_LABEL][info.i_result]
             ideal_state = self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
 
             # If there is one extra qubit, assume it is ERASER_QREG, which is always left in the 0 state
             if ideal_state.num_qubits is not None and final_state.num_qubits == ideal_state.num_qubits + 1:
-                ideal_state = Statevector([1, 0]).tensor(ideal_state)
+                ideal_state = quantum_info.Statevector([1, 0]).tensor(ideal_state)
                 if self._circuit_sv is not None:
                     self._circuit_sv = ideal_state
                     _logger.info("Observed state has 1 extra qubit; assuming ERASER_QREG and expanding for future shots.")
 
-            fid = state_fidelity(final_state, ideal_state)
+            fid = quantum_info.state_fidelity(final_state, ideal_state)
             self._fidelities[index] = fid
             self._states[index] = str(info.state)
         except KeyError:
@@ -125,7 +117,7 @@ class FidelityFunctor:
             self._fidelities[index] = np.nan
             self._states[index] = str(info.state)
 
-    def results(self) -> Generator[tuple[float, CircuitState], CircuitState, None]:
+    def results(self) -> Generator[tuple[float, models.CircuitState], models.CircuitState, None]:
         """Iterate through all stored results.
 
         Optionally supports `CircuitState` as a `SendType` in order to mutate the
@@ -137,7 +129,7 @@ class FidelityFunctor:
             Tuple of fidelity and `CircuitState` corresponding to each shot.
         """
         for i in range(len(self._fidelities)):
-            new_state = yield self._fidelities[i], CircuitState.from_string(self._states[i])
+            new_state = yield self._fidelities[i], models.CircuitState.from_string(self._states[i])
             if new_state is not None:
                 self._states[i] = str(new_state)
                 yield self._fidelities[i], new_state
