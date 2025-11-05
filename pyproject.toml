@@ -92,7 +92,10 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "test_*.py" = [
-    "ANN201"   # Don't require "-> None" on every test function
+    "ANN201",  # Don't require "-> None" on every test function
+]
+"__init__.py" = [
+    "F403",    # Allow wildcard imports in __init__.py (__all__ should be defined in private modules)
 ]
 
 [tool.ruff.lint.pydocstyle]
