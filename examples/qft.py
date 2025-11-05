@@ -97,6 +97,7 @@ def run_simulation(
                                   timeout=None)
     # model = ErasurePassJob(circuit=circuit_transpiled,
     #                        erasure_rate=noise_params.erasure_rate)
+    model.seed(0)
     frontend = ErasureSimFrontend(model=model,
                                   noisy_checks=True,
                                   false_positive_rate=noise_params.false_positive_rate,
