@@ -88,15 +88,14 @@ class ErasureSimFrontend(MultiprocessingRNG):
         """Probability that positive erasure checks are flipped."""
         return self._false_negative_rate
 
-    # TODO: we've used n_{object} elsewhere... change to n_qubits?
     @property
-    def num_qubits(self) -> int:
+    def n_qubits(self) -> int:
         """Number of qubits in the quantum circuit."""
         return self.model.circuit.num_qubits
 
     def _bernoulli_bitstring(self, p: float) -> int:
         """Generate an integer with each bit set with probability p."""
-        bits = self._rng.binomial(1, p, self.num_qubits)
+        bits = self._rng.binomial(1, p, self.n_qubits)
         return int("".join(str(bit) for bit in bits), 2)
 
     def _add_check_noise(self, state: CircuitState) -> CircuitState:
@@ -108,13 +107,13 @@ class ErasureSimFrontend(MultiprocessingRNG):
         e_false_pos_raw = self._bernoulli_bitstring(self.false_positive_rate)
 
         # Mask false pos/neg noise to positive/negative events in x
-        # (note the mask-subtraction pattern as a 'true' bitwise NOT for num_qubits)
+        # (note the mask-subtraction pattern as a 'true' bitwise NOT for n_qubits)
         e_false_neg = x & e_false_neg_raw
-        e_false_pos = ((1 << self.num_qubits) - 1 - x) & e_false_pos_raw
+        e_false_pos = ((1 << self.n_qubits) - 1 - x) & e_false_pos_raw
 
         # Apply the noise (sum modulo 2) and convert back to string
         x_noisy = x ^ e_false_neg ^ e_false_pos
-        x_noisy_str = format(x_noisy, f"0{self.num_qubits}b")
+        x_noisy_str = format(x_noisy, f"0{self.n_qubits}b")
 
         return CircuitState(erasure=x_noisy_str, measure=state.measure)
 
@@ -155,7 +154,7 @@ class ErasureSimFrontend(MultiprocessingRNG):
     def _count_rejected(self, counts: Counter[CircuitState]) -> int:
         return sum((count
                     for state, count in counts.items()
-                    if state.erasure != "0"*self.num_qubits))
+                    if state.erasure != "0"*self.n_qubits))
 
     def run(
             self,

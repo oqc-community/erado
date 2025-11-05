@@ -137,10 +137,10 @@ def example_QFT_sweep(plot_error_bars=True):
         gate_error_2Q=0.01,
     )
 
-    num_qubits = np.array(range(2, 17))
+    n_qubits = np.array(range(2, 17))
     results_list = list[ErasureSimResults]()
-    simulation_time = np.zeros(len(num_qubits))
-    intervals = np.zeros((2, len(num_qubits)))
+    simulation_time = np.zeros(len(n_qubits))
+    intervals = np.zeros((2, len(n_qubits)))
 
     log_i = 0
     filepath_log_exists = True
@@ -150,7 +150,7 @@ def example_QFT_sweep(plot_error_bars=True):
         filepath_log = Path(f"log{log_i}.csv")
         filepath_log_exists = filepath_log.is_file()
 
-    for i, n in enumerate(num_qubits):
+    for i, n in enumerate(n_qubits):
         filepath = Path(f"qft_sweep_n{n}.json")
         if filepath.is_file():
             with open(filepath, "rb") as file:
@@ -162,7 +162,7 @@ def example_QFT_sweep(plot_error_bars=True):
             simulation_time[i] = time
             with open(filepath_log, "w") as file_log:
                 log_writer = csv.writer(file_log)
-                log_writer.writerow(num_qubits)
+                log_writer.writerow(n_qubits)
                 log_writer.writerow(simulation_time)
 
         results_list.append(results)
@@ -187,8 +187,8 @@ def example_QFT_sweep(plot_error_bars=True):
 
     with working_directory(FIGURE_DIR):
         fig1, ax1 = plt.subplots(1)
-        ax1.errorbar(num_qubits, rejection_rate, yerr, fmt="x-")
-        ax1.plot(num_qubits, rejection_rate_theoretical, "--", color="grey")
+        ax1.errorbar(n_qubits, rejection_rate, yerr, fmt="x-")
+        ax1.plot(n_qubits, rejection_rate_theoretical, "--", color="grey")
         ax1.set_xlabel("Number of qubits, n")
         ax1.set_ylabel("Rejection rate")
         fig1.savefig("figure1.pdf")
@@ -203,14 +203,14 @@ def example_QFT_sweep(plot_error_bars=True):
         fig2.savefig("figure2.png")
 
         fig3, ax3 = plt.subplots(1)
-        ax3.plot(num_qubits, circuit_depth, "x-")
+        ax3.plot(n_qubits, circuit_depth, "x-")
         ax3.set_xlabel("Number of qubits, n")
         ax3.set_ylabel("Circuit depth")
         fig3.savefig("figure3.pdf")
         fig3.savefig("figure3.png")
 
         fig4, ax4 = plt.subplots(1)
-        ax4.plot(num_qubits, n_erasable_gates, "x-")
+        ax4.plot(n_qubits, n_erasable_gates, "x-")
         ax4.set_xlabel("Number of qubits, n")
         ax4.set_ylabel("Number of (erasable) gates, g")
         fig4.savefig("figure4.pdf")
@@ -230,9 +230,9 @@ def example_QFT_sweep(plot_error_bars=True):
         min_fidelity = np.min(fidelity, axis=1)
 
         fig6, ax6 = plt.subplots(1)
-        ax6.plot(num_qubits, mean_fidelity, "x-", label="mean")
-        ax6.plot(num_qubits, max_fidelity, "x-", label="max")
-        ax6.plot(num_qubits, min_fidelity, "x-", label="min")
+        ax6.plot(n_qubits, mean_fidelity, "x-", label="mean")
+        ax6.plot(n_qubits, max_fidelity, "x-", label="max")
+        ax6.plot(n_qubits, min_fidelity, "x-", label="min")
         ax6.legend()
         ax6.set_ylim(-0.1, 1.1)
         ax6.set_xlabel("Number of qubits, n")
@@ -242,12 +242,12 @@ def example_QFT_sweep(plot_error_bars=True):
 
 
 def plot_ideal_v_noisy(plot_error_bars=True):
-    num_qubits = np.array(range(2, 17))
+    n_qubits = np.array(range(2, 17))
 
     # Load ideal data
     results_list_ideal = list[ErasureSimResults]()
-    intervals_ideal = np.zeros((2, len(num_qubits)))
-    for i, n in enumerate(num_qubits):
+    intervals_ideal = np.zeros((2, len(n_qubits)))
+    for i, n in enumerate(n_qubits):
         filepath = Path("ideal") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
             results = ErasureSimResults.model_validate_json(file.read())
@@ -264,8 +264,8 @@ def plot_ideal_v_noisy(plot_error_bars=True):
     # Load noisy data
     # (assumes circuit_depth and n_erasable_gates are the same)
     results_list_noisy = list[ErasureSimResults]()
-    intervals_noisy = np.zeros((2, len(num_qubits)))
-    for i, n in enumerate(num_qubits):
+    intervals_noisy = np.zeros((2, len(n_qubits)))
+    for i, n in enumerate(n_qubits):
         filepath = Path("noisy") / f"qft_sweep_n{n}.json"
         with open(filepath, "rb") as file:
             results = ErasureSimResults.model_validate_json(file.read())
@@ -300,7 +300,7 @@ def plot_ideal_v_noisy(plot_error_bars=True):
 
     with working_directory(FIGURE_DIR):
         fig1, ax1 = plt.subplots()
-        plot(ax1, num_qubits, "Number of qubits, n")
+        plot(ax1, n_qubits, "Number of qubits, n")
         fig1.savefig("figure1.pdf")
         fig1.savefig("figure1.png")
 
@@ -320,7 +320,7 @@ def plot_times():
         for filepath in sorted(Path(".").glob("*.csv")):
             with open(filepath, "r") as file:
                 file_reader = csv.reader(file)
-                num_qubits = np.array(next(file_reader), dtype=int)
+                n_qubits = np.array(next(file_reader), dtype=int)
                 time = np.array(next(file_reader), dtype=float)
 
             point_style = "x" if "cpu" in filepath.stem else "."
@@ -328,7 +328,7 @@ def plot_times():
             fmt = point_style + line_style
             label = filepath.stem.replace("log-", "")
 
-            ax.plot(num_qubits, time, fmt, label=f"{label} ({sum(time)})")
+            ax.plot(n_qubits, time, fmt, label=f"{label} ({sum(time)})")
 
         ax.set_xlabel("Number of qubits, n")
         ax.set_ylabel("Simulation time (seconds)")
