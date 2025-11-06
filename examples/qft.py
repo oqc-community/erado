@@ -349,7 +349,7 @@ def plot_times():
         fig2.savefig("figure-time-log.png")
 
 
-def plot_fidelities():
+def plot_fidelities(plot_as_error: bool = False):
     fig, ax = plt.subplots()
     n_qubits = np.array(range(2, 17))
 
@@ -372,8 +372,11 @@ def plot_fidelities():
 
             n_accepted = results_list[0].n_accepted
             fidelity = get_series(results_list, "fidelity", n_accepted)
+            if plot_as_error:
+                fidelity = 1 - fidelity
+
             mean_fidelity = np.mean(fidelity, axis=1)
-            min_fidelity = np.min(fidelity, axis=1)
+            min_fidelity = np.max(fidelity, axis=1) if plot_as_error else np.min(fidelity, axis=1)
 
             colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
             lines = ax.plot(n_qubits, mean_fidelity, "x-", label=name[2], color=colour)
@@ -384,10 +387,12 @@ def plot_fidelities():
             ax.set_title(f"{name[0]}-{name[1]}")
 
     ax.set_xlabel("Number of qubits, n")
-    ax.set_ylabel("Fidelity")
+    ax.set_ylabel("1 - fidelity" if plot_as_error else "Fidelity")
+
     ax.set_ylim(-0.05, 1.05)
     # ax.set_yscale("log")
-    # ax.set_xscale("log")
+
+    ax.grid()
     ax.legend()
     fig.savefig("fidelities.pdf")
     fig.savefig("fidelities.png")
@@ -431,4 +436,4 @@ if __name__ == "__main__":
         example_QFT_sweep(plot_error_bars=True)
         # plot_ideal_v_noisy(plot_error_bars=True)
         # plot_times()
-        # plot_fidelities()
+        # plot_fidelities(plot_as_error=False)
