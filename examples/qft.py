@@ -349,6 +349,50 @@ def plot_times():
         fig2.savefig("figure-time-log.png")
 
 
+def plot_fidelities():
+    fig, ax = plt.subplots()
+    n_qubits = np.array(range(2, 17))
+
+    subdirs = [p for p in Path(".").iterdir()
+               if p.is_dir()]
+
+    for dir in subdirs:
+        name = dir.name.split("-")
+
+        if name[0] == "idealchecks" and name[1] == "idealcirc":
+        # if name[0] == "noisychecks" and name[1] == "idealcirc":
+        # if name[1] == "idealcirc":
+        # if name[0] == "noisychecks" and name[1] == "noisycirc":
+            results_list = list[ErasureSimResults]()
+            for n in n_qubits:
+                filepath = dir / f"qft_sweep_n{n}.json"
+                with open(filepath, "rb") as file:
+                    results = ErasureSimResults.model_validate_json(file.read())
+                results_list.append(results)
+
+            n_accepted = results_list[0].n_accepted
+            fidelity = get_series(results_list, "fidelity", n_accepted)
+            mean_fidelity = np.mean(fidelity, axis=1)
+            min_fidelity = np.min(fidelity, axis=1)
+
+            colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
+            lines = ax.plot(n_qubits, mean_fidelity, "x-", label=name[2], color=colour)
+            # lines = ax.plot(n_qubits, mean_fidelity, "x-", label=f"{name[0]}({name[2]})")
+
+            ax.plot(n_qubits, min_fidelity, "x--", color=lines[0].get_color())
+
+            ax.set_title(f"{name[0]}-{name[1]}")
+
+    ax.set_xlabel("Number of qubits, n")
+    ax.set_ylabel("Fidelity")
+    ax.set_ylim(-0.05, 1.05)
+    # ax.set_yscale("log")
+    # ax.set_xscale("log")
+    ax.legend()
+    fig.savefig("fidelities.pdf")
+    fig.savefig("fidelities.png")
+
+
 if __name__ == "__main__":
     matplotlib.rcParams["savefig.dpi"] = 300
     matplotlib.rcParams["savefig.bbox"] = "tight"
@@ -387,3 +431,4 @@ if __name__ == "__main__":
         example_QFT_sweep(plot_error_bars=True)
         # plot_ideal_v_noisy(plot_error_bars=True)
         # plot_times()
+        # plot_fidelities()
