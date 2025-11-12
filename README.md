@@ -1,7 +1,7 @@
 # erado
 Simulation suite for error mitigation via dimon erasure models.
 
-[![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+[![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![OQC PyPI](https://img.shields.io/badge/OQC%20PyPI-latest-cornflowerblue?logo=pypi)](https://pypi.int.oqc.app/simple/erado)
 
 
 [**ērādō**](https://en.wiktionary.org/wiki/erado) \
