@@ -64,7 +64,7 @@ typeCheckingMode = "standard"
 exclude = [
     "typings",
 
-    # Default pyright exclude entires:
+    # Default pyright exclude entries:
     "**/node_modules",
     "**/__pycache__",
     "**/.*",
