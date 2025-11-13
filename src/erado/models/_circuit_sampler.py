@@ -176,7 +176,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
             multiprocess: bool = True,
-            **_
+            **_,
         ) -> Counter[CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
@@ -205,7 +205,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             counts = Counter[str]()
             with ProcessPoolExecutor(
                     initializer=self._reseed,
-                    mp_context=multiprocessing.get_context("spawn")
+                    mp_context=multiprocessing.get_context("spawn"),
                 ) as executor:
                 max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
@@ -215,7 +215,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                 ]
                 counters_futures.append(
                     executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks,
-                                    (max_workers - 1) * shots_each)
+                                    (max_workers - 1) * shots_each),
                 )
 
                 for counter in as_completed(counters_futures):
@@ -245,7 +245,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                     future = executor.submit(lambda: backend.run(
                             circuit,
                             shots=1,
-                            seed_simulator=self._rng.integers(2**32)
+                            seed_simulator=self._rng.integers(2**32),
                         ).result())  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
                     _, not_done = wait((future,), timeout=self.timeout)
 

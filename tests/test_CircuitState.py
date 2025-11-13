@@ -28,7 +28,7 @@ def test_serialise_json():
 
 @pytest.mark.parametrize("state_str,expected", [
     (f"\"{"0"*N},{"1"*N}\"", ("0"*N, "1"*N)),  # Measure all qubits
-    (f"\"{"0"*N},{"1"*2}\"", ("0"*N, "1"*2))   # Measure only some qubits
+    (f"\"{"0"*N},{"1"*2}\"", ("0"*N, "1"*2)),  # Measure only some qubits
 ])
 def test_deserialise(state_str: str, expected: tuple[str, str]):
     """Test that `CircuitState` correctly loads from its string representation."""
@@ -41,7 +41,7 @@ def test_deserialise(state_str: str, expected: tuple[str, str]):
 @pytest.mark.parametrize("state_str,expected", [
     ("0"*N + "1"*N, ("0"*N, "1"*N)),    # Measure all qubits
     ("0 "*N + "1 "*N, ("0"*N, "1"*N)),  # Arbitrary whitespace from qiskit
-    ("0"*N + "1"*2, ("0"*N, "1"*2))     # Measure only some qubits
+    ("0"*N + "1"*2, ("0"*N, "1"*2)),    # Measure only some qubits
 ])
 def test_from_qiskit_string(state_str: str, expected: tuple[str, str]):
     """Test that `CircuitState` correctly constructs from a Qiskit results string."""

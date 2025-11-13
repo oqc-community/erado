@@ -88,6 +88,7 @@ select = [
     "D401",    # Docstrings must have imperative mood
     "ANN",     # Type annotations are mandatory
     "F",       # Enable Pyflakes rules (common code errors e.g. unused imports)
+    "COM",     # Standardise trailing commas
 ]
 
 [tool.ruff.lint.per-file-ignores]

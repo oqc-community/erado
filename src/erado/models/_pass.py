@@ -259,7 +259,7 @@ class ErasurePassJob:
             backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
-            **_
+            **_,
         ) -> Counter[CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 

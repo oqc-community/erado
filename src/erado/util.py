@@ -63,7 +63,7 @@ annotator.
 def get_series(
         models: Iterable[pydantic.BaseModel],
         field: str,
-        subarray_size: int | None = None
+        subarray_size: int | None = None,
     ) -> NPVector | NPMatrix:
     """Make a data series from a collection of Pydantic models.
 

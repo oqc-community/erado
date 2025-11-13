@@ -42,7 +42,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
             model: models.ErasureModel,
             noisy_checks: bool = False,
             false_positive_rate: float = 0,
-            false_negative_rate: float = 0
+            false_negative_rate: float = 0,
         ):
         """Construct an `ErasureSimFrontend`.
 

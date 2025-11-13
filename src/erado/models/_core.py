@@ -149,7 +149,7 @@ class ErasureModel(Protocol):
             backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
-            **_
+            **_,
         ) -> Counter[CircuitState]:
         """Execute an erasure simulation using this model.
 
