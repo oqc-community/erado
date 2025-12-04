@@ -8,22 +8,22 @@ readme = "README.md"
 dynamic = ["version"]
 requires-python = ">=3.13"
 dependencies = [
-    "numpy >=2.3.3",
-    "scipy >=1.16.2",
-    "matplotlib >=3.10.6",
-    "qiskit >=2.2.1",
-    "qiskit-aer-gpu-cu11 >=0.17.2; sys_platform == 'linux'",
-    "qiskit-aer >=0.17.2; sys_platform != 'linux'",
-    "pydantic >=2.12.0",
+    "numpy>=2.3.3",
+    "scipy>=1.16.2",
+    "matplotlib>=3.10.6",
+    "qiskit>=2.2.1",
+    "qiskit-aer-gpu-cu11>=0.17.2; sys_platform == 'linux'",
+    "qiskit-aer>=0.17.2; sys_platform != 'linux'",
+    "pydantic>=2.12.0",
 ]
 
 [dependency-groups]
 dev = [
-    "poethepoet >=0.37.0",
-    "pyright[nodejs] >=1.1.406",
-    "pre-commit >=4.3.0",
-    "pytest >=8.4.2",
-    "ruff >=0.14.0",
+    "poethepoet>=0.37.0",
+    "pyright[nodejs]>=1.1.406",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "ruff>=0.14.0",
 ]
 
 
