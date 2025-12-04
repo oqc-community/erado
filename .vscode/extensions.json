@@ -2,6 +2,7 @@
     "recommendations": [
         "njpwerner.autodocstring",
         "ms-python.vscode-pylance",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "gruntfuggly.todo-tree",
     ]
 }
