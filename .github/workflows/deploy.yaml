@@ -21,11 +21,13 @@ jobs:
 
       - uses: ./.github/actions/init
 
-      - name: Configure Poetry with internal PyPI
+      - name: Build package
         run: |
-          poetry config repositories.repo ${{ vars.INTERNAL_PYPI_URL }}
-          poetry config http-basic.repo ${{ secrets.INTERNAL_PYPI_USERNAME }} ${{ secrets.INTERNAL_PYPI_PASSWORD }}
+          uv build
 
-      - name: Build and publish to internal PyPI
+      - name: Publish to internal PyPI
         run: |
-          poetry publish --repository repo --build
+          uv publish \
+            --publish-url ${{ vars.INTERNAL_PYPI_URL }} \
+            --username ${{ secrets.INTERNAL_PYPI_USERNAME }} \
+            --password ${{ secrets.INTERNAL_PYPI_PASSWORD }}

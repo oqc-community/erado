@@ -4,11 +4,4 @@ description: "Reusable initialisation"
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v6
-      with:
-        python-version: "3.13"
-
-    - uses: snok/install-poetry@v1
-      with:
-        plugins: |
-          poetry-dynamic-versioning
+    - uses: astral-sh/setup-uv@v7

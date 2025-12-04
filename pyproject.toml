@@ -1,44 +1,40 @@
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
-build-backend = "poetry_dynamic_versioning.backend"
-
 [project]
 name = "erado"
 description = "Simulation suite for error mitigation via dimon erasure models."
 authors = [
-    { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" }
+    { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" },
 ]
 readme = "README.md"
 dynamic = ["version"]
 requires-python = ">=3.13"
 dependencies = [
-    "numpy (>=2.3.3,<3.0.0)",
-    "scipy (>=1.16.2,<2.0.0)",
-    "matplotlib (>=3.10.6,<4.0.0)",
-    "qiskit (>=2.2.1,<3.0.0)",
-    "qiskit-aer-gpu-cu11 (>=0.17.2,<0.18.0) ; sys_platform == 'linux'",
-    "qiskit-aer (>=0.17.2,<0.18.0) ; sys_platform != 'linux'",
-    "pydantic (>=2.12.0,<3.0.0)",
+    "numpy >=2.3.3",
+    "scipy >=1.16.2",
+    "matplotlib >=3.10.6",
+    "qiskit >=2.2.1",
+    "qiskit-aer-gpu-cu11 >=0.17.2; sys_platform == 'linux'",
+    "qiskit-aer >=0.17.2; sys_platform != 'linux'",
+    "pydantic >=2.12.0",
 ]
 
 [dependency-groups]
 dev = [
-    "poethepoet (>=0.37.0,<0.38.0)",
-    "pyright[nodejs] (>=1.1.406,<2.0.0)",
-    "pre-commit (>=4.3.0,<5.0.0)",
-    "pytest (>=8.4.2,<9.0.0)",
-    "ruff (>=0.14.0,<0.15.0)",
+    "poethepoet >=0.37.0",
+    "pyright[nodejs] >=1.1.406",
+    "pre-commit >=4.3.0",
+    "pytest >=8.4.2",
+    "ruff >=0.14.0",
 ]
 
 
-[tool.poetry]
-packages = [{ include = "erado", from = "src" }]
-version = "0.0.0"
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
-[tool.poetry.requires-plugins]
-poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
 
-[tool.poetry-dynamic-versioning]
+[tool.uv-dynamic-versioning]
 enable = true
 style = "pep440"
 
