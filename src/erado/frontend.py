@@ -12,6 +12,7 @@ import pydantic
 import numpy as np
 
 from collections import Counter
+import multiprocessing
 from multiprocessing.managers import SharedMemoryManager
 
 
@@ -175,7 +176,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        with SharedMemoryManager() as smm:
+        with SharedMemoryManager(ctx=multiprocessing.get_context("spawn")) as smm:
             # A new FidelityFunctor is needed for each postselection round
             # (as they are effectively distinct simulations, each one unaware of the last)
             fidelity_functors = list[fidelity.FidelityFunctor]()
