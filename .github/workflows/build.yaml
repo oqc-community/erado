@@ -1,6 +1,6 @@
 name: build
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   type-checking:
@@ -54,3 +54,30 @@ jobs:
       - name: Lint Python with Ruff
         run: |
           uv run poe lint
+
+  publish:
+    runs-on:
+      group: gha-oqc-tech
+
+    # Only publish if this is a passing push/workflow_dispatch on main
+    needs: [type-checking, pre-commit-hooks, unit-tests, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: ./.github/actions/init
+
+      - name: Build package
+        run: |
+          uv build
+
+      - name: Publish to internal PyPI
+        run: |
+          uv publish \
+            --publish-url ${{ vars.INTERNAL_PYPI_URL }} \
+            --username ${{ secrets.INTERNAL_PYPI_USERNAME }} \
+            --password ${{ secrets.INTERNAL_PYPI_PASSWORD }}
