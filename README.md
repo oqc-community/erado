@@ -25,26 +25,30 @@ This package is published to our internal PyPI (<https://pypi.int.oqc.app/simple
 pip install erado -i https://pypi.int.oqc.app/simple
 ```
 
-or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using Poetry).
+or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using uv/Poetry).
 
-### From source (Poetry)
+### From source (uv)
 
-<!-- TODO: Update docs from Poetry to uv -->
-
-To ensure that conditional dependencies work properly, you may need to run the following configuration step once on your system (this depends on your Poetry version: it was [introduced in 2.0.0](https://python-poetry.org/docs/configuration/#installerre-resolve) and is [likely to become the default in future Poetry versions](https://python-poetry.org/docs/dependency-specification/#exclusive-extras)):
+This package uses [uv](https://docs.astral.sh/uv) for Python project management; so, after cloning the repo, you can explicitly configure the project in a fresh virtual environment with
 
 ```shell
-poetry config installer.re-resolve false
+uv sync
 ```
 
-After which the project can be installed in a new virtual environment simply via
+This repo uses [pre-commit hooks](https://github.com/pre-commit/pre-commit) to ensure basic code quality (e.g. whitespace, line endings etc.); if you intend to contribute after cloning, it's best to set up pre-commits (to avoid failing PR checks) once with
 
 ```shell
-poetry install
+uv run pre-commit install
 ```
 
-This repo uses pre-commit hooks to ensure code quality, so if you intend to contribute after cloning/installing, it's best to set up pre-commits (to avoid failing PR checks) once with the following command:
+Pre-commit hooks automatically check against changed files only. If you want to manually invoke the pre-commit rules on all files in the repo (although, by design, you generally won't need to do that), simply run
 
 ```shell
-poetry run pre-commit install
+uv run poe pre-commit
+```
+
+The [`poe`](https://poethepoet.natn.io/index.html) command can also be used to run other common tasks. For example, all codebase checks (i.e. [linting (Ruff)](https://docs.astral.sh/ruff), [static type checking (Pyright)](https://github.com/microsoft/pyright) and [unit tests (pytest)](https://docs.pytest.org/en/stable)) can be performed with
+
+```shell
+uv run poe checks
 ```
