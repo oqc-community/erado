@@ -320,17 +320,36 @@ def plot_ideal_v_noisy(
 
     rejection_rate_noisy = get_series(results_list_noisy, "rejection_rate")
 
+    # Load noisy data (noisy checks + circ)
+    # (assumes circuit_depth and n_erasable_gates are the same)
+    results_list_noisy_circ = list[ErasureSimResults]()
+    intervals_noisy_circ = np.zeros((2, len(n_qubits)))
+    for i, n in enumerate(n_qubits):
+        filepath = Path("noisy-circ") / f"qft_sweep_n{n}.json"
+        with open(filepath, "rb") as file:
+            results = ErasureSimResults.model_validate_json(file.read())
+
+        results_list_noisy_circ.append(results)
+
+        test = binomtest(results.n_rejected, results.shots)
+        intervals_noisy_circ[0, i], intervals_noisy_circ[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+
+    rejection_rate_noisy_circ = get_series(results_list_noisy_circ, "rejection_rate")
+
     if plot_error_bars:
         yerr_ideal = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_ideal), 1, intervals_ideal)
         yerr_noisy = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_noisy), 1, intervals_noisy)
+        yerr_noisy_circ = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_noisy_circ), 1, intervals_noisy_circ)
     else:
         yerr_ideal = None
         yerr_noisy = None
+        yerr_noisy_circ = None
 
     p = 0.01
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
     def plot(ax: Axes, xdata, xlabel):
+        noisy_circ = ax.errorbar(xdata, rejection_rate_noisy_circ, yerr_noisy_circ, fmt="x-", label="noisy checks + circuit (depolarising 0.001+0.01)")
         noisy = ax.errorbar(xdata, rejection_rate_noisy, yerr_noisy, fmt="x-", label="noisy checks (falsepos = falseneg = 0.005)")
         ideal = ax.errorbar(xdata, rejection_rate_ideal, yerr_ideal, fmt="x-", label="ideal checks")
         theoretical = ax.plot(xdata, rejection_rate_theoretical, "--", color="gray", label="ideal checks (theoretical)")
@@ -342,7 +361,7 @@ def plot_ideal_v_noisy(
             ax.grid()
 
         # Customise order of items in legend
-        ax.legend(handles=[noisy, ideal, theoretical[0]])
+        ax.legend(handles=[noisy_circ, noisy, ideal, theoretical[0]])
 
     with working_directory(FIGURE_DIR):
         fig, ax = plt.subplots()
