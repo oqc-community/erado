@@ -128,6 +128,7 @@ def example_QFT():
     run_simulation(noise_params, 16)
 
 
+# TODO: Flesh this out to enable running all plotting functions sequentially (with cached results etc.)
 n_figures: int = 0
 
 def save_figure(fig, name: str) -> None:
@@ -202,7 +203,7 @@ def example_QFT_sweep(
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
     with working_directory(FIGURE_DIR):
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.errorbar(n_qubits, rejection_rate, yerr, fmt="x-")
         ax.plot(n_qubits, rejection_rate_theoretical, "--", color="grey")
         ax.set_xlabel("Number of qubits, n")
@@ -211,7 +212,8 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "rejection-rate-vs-n")
 
-        fig, ax = plt.subplots(1)
+        # TODO: Error bars for total shots? Can be calculated from rejection rate error bars?
+        fig, ax = plt.subplots()
         ax.plot(n_qubits, actual_shots, "x-")
         ax.set_yscale("log")
         ax.set_xlabel("Number of qubits, n")
@@ -220,7 +222,7 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "total-shots-vs-n")
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.plot(n_qubits, actual_shots / n_accepted, "x-")
         ax.set_yscale("log")
         ax.set_xlabel("Number of qubits, n")
@@ -229,7 +231,7 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "total-shots-proportion-vs-n")
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.errorbar(circuit_depth, rejection_rate, yerr, fmt="x-")
         ax.plot(circuit_depth, rejection_rate_theoretical, "--", color="grey")
         ax.set_xlabel("Circuit depth")
@@ -238,7 +240,7 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "rejection-rate-vs-depth")
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.plot(n_qubits, circuit_depth, "x-")
         ax.set_xlabel("Number of qubits, n")
         ax.set_ylabel("Circuit depth")
@@ -246,7 +248,7 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "depth-vs-n")
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.plot(n_qubits, n_erasable_gates, "x-")
         ax.set_xlabel("Number of qubits, n")
         ax.set_ylabel("Number of (erasable) gates, g")
@@ -254,7 +256,7 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "g-vs-n")
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.errorbar(n_erasable_gates, rejection_rate, yerr, fmt="x-")
         ax.plot(n_erasable_gates, rejection_rate_theoretical, "--", color="grey")
         ax.set_xlabel("Number of (erasable) gates, g")
@@ -268,7 +270,7 @@ def example_QFT_sweep(
         max_fidelity = np.max(fidelity, axis=1)
         min_fidelity = np.min(fidelity, axis=1)
 
-        fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots()
         ax.plot(n_qubits, mean_fidelity, "x-", label="mean")
         ax.plot(n_qubits, max_fidelity, "x-", label="max")
         ax.plot(n_qubits, min_fidelity, "x-", label="min")
@@ -363,6 +365,8 @@ def plot_ideal_v_noisy(
         # Customise order of items in legend
         ax.legend(handles=[noisy_circ, noisy, ideal, theoretical[0]])
 
+    # TODO: total shots (+ proportion) in same vein as above
+
     with working_directory(FIGURE_DIR):
         fig, ax = plt.subplots()
         plot(ax, n_qubits, "Number of qubits, n")
@@ -410,53 +414,70 @@ def plot_times():
         fig2.savefig("figure-time-log.png")
 
 
-def plot_fidelities(plot_as_error: bool = False):
-    fig, ax = plt.subplots()
+def plot_fidelities(
+        plot_as_error: bool = False,
+        draw_grid: bool = True,
+    ):
+    # TODO: Add error bars for fidelities.
     n_qubits = np.array(range(2, 17))
 
     subdirs = [p for p in Path(".").iterdir()
                if p.is_dir()]
 
-    for dir in subdirs:
-        name = dir.name.split("-")
+    def plot(ax: Axes, component_1: str, component_2: str):
+        for dir in subdirs:
+            name = dir.name.split("-")
 
-        if name[0] == "idealchecks" and name[1] == "idealcirc":
-        # if name[0] == "noisychecks" and name[1] == "idealcirc":
-        # if name[1] == "idealcirc":
-        # if name[0] == "noisychecks" and name[1] == "noisycirc":
-            results_list = list[ErasureSimResults]()
-            for n in n_qubits:
-                filepath = dir / f"qft_sweep_n{n}.json"
-                with open(filepath, "rb") as file:
-                    results = ErasureSimResults.model_validate_json(file.read())
-                results_list.append(results)
+            if name[0] == component_1 and name[1] == component_2:
+                results_list = list[ErasureSimResults]()
+                for n in n_qubits:
+                    # TODO: Standardise above around this directory structure as much as possible.
+                    filepath = dir / "data" / f"qft_sweep_n{n}.json"
+                    with open(filepath, "rb") as file:
+                        results = ErasureSimResults.model_validate_json(file.read())
+                    results_list.append(results)
 
-            n_accepted = results_list[0].n_accepted
-            fidelity = get_series(results_list, "fidelity", n_accepted)
-            if plot_as_error:
-                fidelity = 1 - fidelity
+                n_accepted = results_list[0].n_accepted
+                fidelity = get_series(results_list, "fidelity", n_accepted)
+                if plot_as_error:
+                    fidelity = 1 - fidelity
 
-            mean_fidelity = np.mean(fidelity, axis=1)
-            min_fidelity = np.max(fidelity, axis=1) if plot_as_error else np.min(fidelity, axis=1)
+                mean_fidelity = np.mean(fidelity, axis=1)
+                min_fidelity = np.max(fidelity, axis=1) if plot_as_error else np.min(fidelity, axis=1)
 
-            colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
-            lines = ax.plot(n_qubits, mean_fidelity, "x-", label=name[2], color=colour)
-            # lines = ax.plot(n_qubits, mean_fidelity, "x-", label=f"{name[0]}({name[2]})")
+                colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
+                lines = ax.plot(n_qubits, mean_fidelity, "x-", label=name[2], color=colour)
 
-            ax.plot(n_qubits, min_fidelity, "x--", color=lines[0].get_color())
+                ax.plot(n_qubits, min_fidelity, "x--", color=lines[0].get_color())
 
-            ax.set_title(f"{name[0]}-{name[1]}")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("1 - fidelity" if plot_as_error else "Fidelity")
 
-    ax.set_xlabel("Number of qubits, n")
-    ax.set_ylabel("1 - fidelity" if plot_as_error else "Fidelity")
+        ax.set_ylim(-0.05, 1.05)
+        # ax.set_yscale("log")
 
-    ax.set_ylim(-0.05, 1.05)
-    # ax.set_yscale("log")
+        if draw_grid:
+            ax.grid()
 
-    ax.grid()
-    ax.legend()
-    fig.savefig("fidelities.pdf")
-    fig.savefig("fidelities.png")
+        ax.legend()
+
+    fig, ax = plt.subplots()
+    component_1, component_2 = "idealchecks", "idealcirc"
+    plot(ax, component_1, component_2)
+    with working_directory(FIGURE_DIR):
+        save_figure(fig, f"fidelity-{component_1}-{component_2}")
+
+    fig, ax = plt.subplots()
+    component_1, component_2 = "noisychecks", "idealcirc"
+    plot(ax, component_1, component_2)
+    with working_directory(FIGURE_DIR):
+        save_figure(fig, f"fidelity-{component_1}-{component_2}")
+
+    fig, ax = plt.subplots()
+    component_1, component_2 = "noisychecks", "noisycirc"
+    plot(ax, component_1, component_2)
+    with working_directory(FIGURE_DIR):
+        save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
 
 if __name__ == "__main__":
@@ -497,4 +518,4 @@ if __name__ == "__main__":
         example_QFT_sweep(plot_error_bars=True, draw_grid=True)
         # plot_ideal_v_noisy(plot_error_bars=True, draw_grid=True)
         # plot_times()
-        # plot_fidelities(plot_as_error=False)
+        # plot_fidelities(plot_as_error=False, draw_grid=True)
