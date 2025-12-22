@@ -128,7 +128,10 @@ def example_QFT():
     run_simulation(noise_params, 16)
 
 
-def example_QFT_sweep(plot_error_bars=True):
+def example_QFT_sweep(
+        plot_error_bars=True,
+        draw_grid=True,
+    ):
     # Current dimon noise model
     noise_params = NoiseParams(
         erasure_rate=50e-6,
@@ -174,6 +177,7 @@ def example_QFT_sweep(plot_error_bars=True):
     rejection_rate = get_series(results_list, "rejection_rate")
     circuit_depth = get_series(results_list, "circuit_depth")
     n_erasable_gates = get_series(results_list, "n_erasable_gates")
+    actual_shots = get_series(results_list, "shots")
 
     n_accepted = results_list[0].n_accepted
     fidelity = get_series(results_list, "fidelity", n_accepted)
@@ -187,59 +191,94 @@ def example_QFT_sweep(plot_error_bars=True):
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
     with working_directory(FIGURE_DIR):
-        fig1, ax1 = plt.subplots(1)
-        ax1.errorbar(n_qubits, rejection_rate, yerr, fmt="x-")
-        ax1.plot(n_qubits, rejection_rate_theoretical, "--", color="grey")
-        ax1.set_xlabel("Number of qubits, n")
-        ax1.set_ylabel("Rejection rate")
-        fig1.savefig("figure1.pdf")
-        fig1.savefig("figure1.png")
+        n_figures = 0
 
-        fig2, ax2 = plt.subplots(1)
-        ax2.errorbar(circuit_depth, rejection_rate, yerr, fmt="x-")
-        ax2.plot(circuit_depth, rejection_rate_theoretical, "--", color="grey")
-        ax2.set_xlabel("Circuit depth")
-        ax2.set_ylabel("Rejection rate")
-        fig2.savefig("figure2.pdf")
-        fig2.savefig("figure2.png")
+        def save_figure(fig, name: str) -> None:
+            nonlocal n_figures
+            n_figures += 1
 
-        fig3, ax3 = plt.subplots(1)
-        ax3.plot(n_qubits, circuit_depth, "x-")
-        ax3.set_xlabel("Number of qubits, n")
-        ax3.set_ylabel("Circuit depth")
-        fig3.savefig("figure3.pdf")
-        fig3.savefig("figure3.png")
+            file_stem = f"figure{n_figures}-{name}"
+            fig.savefig(file_stem + ".pdf")
+            fig.savefig(file_stem + ".png")
 
-        fig4, ax4 = plt.subplots(1)
-        ax4.plot(n_qubits, n_erasable_gates, "x-")
-        ax4.set_xlabel("Number of qubits, n")
-        ax4.set_ylabel("Number of (erasable) gates, g")
-        fig4.savefig("figure4.pdf")
-        fig4.savefig("figure4.png")
 
-        fig5, ax5 = plt.subplots(1)
-        ax5.errorbar(n_erasable_gates, rejection_rate, yerr, fmt="x-")
-        ax5.plot(n_erasable_gates, rejection_rate_theoretical, "--", color="grey")
-        ax5.set_xlabel("Number of (erasable) gates, g")
-        ax5.set_ylabel("Rejection rate")
-        fig5.savefig("figure5.pdf")
-        fig5.savefig("figure5.png")
+        fig, ax = plt.subplots(1)
+        ax.errorbar(n_qubits, rejection_rate, yerr, fmt="x-")
+        ax.plot(n_qubits, rejection_rate_theoretical, "--", color="grey")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Rejection rate")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "rejection-rate-vs-n")
+
+        fig, ax = plt.subplots(1)
+        ax.plot(n_qubits, actual_shots, "x-")
+        ax.set_yscale("log")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Total shots")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "total-shots-vs-n")
+
+        fig, ax = plt.subplots(1)
+        ax.plot(n_qubits, actual_shots / n_accepted, "x-")
+        ax.set_yscale("log")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel(f"Total shots / target shots({n_accepted})")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "total-shots-proportion-vs-n")
+
+        fig, ax = plt.subplots(1)
+        ax.errorbar(circuit_depth, rejection_rate, yerr, fmt="x-")
+        ax.plot(circuit_depth, rejection_rate_theoretical, "--", color="grey")
+        ax.set_xlabel("Circuit depth")
+        ax.set_ylabel("Rejection rate")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "rejection-rate-vs-depth")
+
+        fig, ax = plt.subplots(1)
+        ax.plot(n_qubits, circuit_depth, "x-")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Circuit depth")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "depth-vs-n")
+
+        fig, ax = plt.subplots(1)
+        ax.plot(n_qubits, n_erasable_gates, "x-")
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Number of (erasable) gates, g")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "g-vs-n")
+
+        fig, ax = plt.subplots(1)
+        ax.errorbar(n_erasable_gates, rejection_rate, yerr, fmt="x-")
+        ax.plot(n_erasable_gates, rejection_rate_theoretical, "--", color="grey")
+        ax.set_xlabel("Number of (erasable) gates, g")
+        ax.set_ylabel("Rejection rate")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "rejection-rate-vs-g")
 
 
         mean_fidelity = np.mean(fidelity, axis=1)
         max_fidelity = np.max(fidelity, axis=1)
         min_fidelity = np.min(fidelity, axis=1)
 
-        fig6, ax6 = plt.subplots(1)
-        ax6.plot(n_qubits, mean_fidelity, "x-", label="mean")
-        ax6.plot(n_qubits, max_fidelity, "x-", label="max")
-        ax6.plot(n_qubits, min_fidelity, "x-", label="min")
-        ax6.legend()
-        ax6.set_ylim(-0.1, 1.1)
-        ax6.set_xlabel("Number of qubits, n")
-        ax6.set_ylabel("Fidelity")
-        fig6.savefig("figure6.pdf")
-        fig6.savefig("figure6.png")
+        fig, ax = plt.subplots(1)
+        ax.plot(n_qubits, mean_fidelity, "x-", label="mean")
+        ax.plot(n_qubits, max_fidelity, "x-", label="max")
+        ax.plot(n_qubits, min_fidelity, "x-", label="min")
+        ax.legend()
+        ax.set_ylim(-0.1, 1.1)
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Fidelity")
+        if draw_grid:
+            ax.grid()
+        save_figure(fig, "fidelity-vs-n")
 
 
 def plot_ideal_v_noisy(plot_error_bars=True):
