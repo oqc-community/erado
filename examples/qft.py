@@ -21,7 +21,7 @@ from qiskit_aer.noise import (
 )
 
 import numpy as np
-from scipy.stats import binomtest
+import scipy.stats
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -183,7 +183,7 @@ def example_QFT_sweep(
 
         results_list.append(results)
 
-        test = binomtest(results.n_rejected, results.shots)
+        test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals[0, i], intervals[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
 
     rejection_rate = get_series(results_list, "rejection_rate")
@@ -299,7 +299,7 @@ def plot_ideal_v_noisy(
 
         results_list_ideal.append(results)
 
-        test = binomtest(results.n_rejected, results.shots)
+        test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_ideal[0, i], intervals_ideal[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
 
     rejection_rate_ideal = get_series(results_list_ideal, "rejection_rate")
@@ -317,7 +317,7 @@ def plot_ideal_v_noisy(
 
         results_list_noisy.append(results)
 
-        test = binomtest(results.n_rejected, results.shots)
+        test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_noisy[0, i], intervals_noisy[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy = get_series(results_list_noisy, "rejection_rate")
@@ -333,7 +333,7 @@ def plot_ideal_v_noisy(
 
         results_list_noisy_circ.append(results)
 
-        test = binomtest(results.n_rejected, results.shots)
+        test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_noisy_circ[0, i], intervals_noisy_circ[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy_circ = get_series(results_list_noisy_circ, "rejection_rate")
@@ -416,9 +416,9 @@ def plot_times():
 
 def plot_fidelities(
         plot_as_error: bool = False,
+        confidence_level: float | None = 0.95,
         draw_grid: bool = True,
     ):
-    # TODO: Add error bars for fidelities.
     n_qubits = np.array(range(2, 17))
 
     subdirs = [p for p in Path(".").iterdir()
@@ -445,10 +445,26 @@ def plot_fidelities(
                 mean_fidelity = np.mean(fidelity, axis=1)
                 min_fidelity = np.max(fidelity, axis=1) if plot_as_error else np.min(fidelity, axis=1)
 
-                colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
-                lines = ax.plot(n_qubits, mean_fidelity, "x-", label=name[2], color=colour)
+                if confidence_level is not None:
+                    # Calculate error bars for mean via Student's t distribution with standard error of the mean (SEM)
+                    n_samples = np.size(fidelity, 1)
+                    sem_fidelity = scipy.stats.sem(fidelity, axis=1)
+                    yerr = scipy.stats.t.interval(confidence_level, n_samples - 1, loc=mean_fidelity, scale=sem_fidelity)
 
-                ax.plot(n_qubits, min_fidelity, "x--", color=lines[0].get_color())
+                    for i in [0, 1]:
+                        for j, x in enumerate(yerr[i]):
+                            # Resolve NaNs as zero-width intervals
+                            if np.isnan(x):
+                                yerr[i][j] = mean_fidelity[j]
+
+                            # Convert absolute to relative
+                            yerr[i][j] = np.abs(x - mean_fidelity[j])
+                else:
+                    yerr = None
+
+                colour = "tab:blue" if name[2] == "nopostselect" else "tab:orange"
+                ax.errorbar(n_qubits, mean_fidelity, yerr, fmt="x-", label=name[2], color=colour)
+                ax.plot(n_qubits, min_fidelity, "x--", color=colour)
 
         ax.set_xlabel("Number of qubits, n")
         ax.set_ylabel("1 - fidelity" if plot_as_error else "Fidelity")
@@ -515,7 +531,7 @@ if __name__ == "__main__":
 
     with working_directory(ROOT_DIR):
         # example_QFT()
-        example_QFT_sweep(plot_error_bars=True, draw_grid=True)
-        # plot_ideal_v_noisy(plot_error_bars=True, draw_grid=True)
+        example_QFT_sweep()
+        # plot_ideal_v_noisy()
         # plot_times()
-        # plot_fidelities(plot_as_error=False, draw_grid=True)
+        # plot_fidelities()
