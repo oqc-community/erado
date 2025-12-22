@@ -121,7 +121,7 @@ def run_simulation(
 
 def example_QFT():
     # Current dimon noise model
-    noise_params = NoiseParams(erasure_rate=50e-6,
+    noise_params = NoiseParams(erasure_rate=0.01,
                                false_positive_rate=0.005,
                                false_negative_rate=0.005)
 
@@ -134,7 +134,7 @@ def example_QFT_sweep(
     ):
     # Current dimon noise model
     noise_params = NoiseParams(
-        erasure_rate=50e-6,
+        erasure_rate=0.01,
         false_positive_rate=0.005,
         false_negative_rate=0.005,
         gate_error_1Q=0.001,
@@ -324,7 +324,7 @@ def plot_ideal_v_noisy(plot_error_bars=True):
         yerr_ideal = None
         yerr_noisy = None
 
-    p = 50e-6
+    p = 0.01
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
     def plot(ax: Axes, xdata, xlabel):
