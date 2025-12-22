@@ -128,6 +128,17 @@ def example_QFT():
     run_simulation(noise_params, 16)
 
 
+n_figures: int = 0
+
+def save_figure(fig, name: str) -> None:
+    global n_figures
+    n_figures += 1
+
+    file_stem = f"figure{n_figures}-{name}"
+    fig.savefig(file_stem + ".pdf")
+    fig.savefig(file_stem + ".png")
+
+
 def example_QFT_sweep(
         plot_error_bars=True,
         draw_grid=True,
@@ -191,17 +202,6 @@ def example_QFT_sweep(
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
 
     with working_directory(FIGURE_DIR):
-        n_figures = 0
-
-        def save_figure(fig, name: str) -> None:
-            nonlocal n_figures
-            n_figures += 1
-
-            file_stem = f"figure{n_figures}-{name}"
-            fig.savefig(file_stem + ".pdf")
-            fig.savefig(file_stem + ".png")
-
-
         fig, ax = plt.subplots(1)
         ax.errorbar(n_qubits, rejection_rate, yerr, fmt="x-")
         ax.plot(n_qubits, rejection_rate_theoretical, "--", color="grey")
@@ -281,7 +281,10 @@ def example_QFT_sweep(
         save_figure(fig, "fidelity-vs-n")
 
 
-def plot_ideal_v_noisy(plot_error_bars=True):
+def plot_ideal_v_noisy(
+        plot_error_bars=True,
+        draw_grid=True,
+    ):
     n_qubits = np.array(range(2, 17))
 
     # Load ideal data
@@ -335,24 +338,24 @@ def plot_ideal_v_noisy(plot_error_bars=True):
         ax.set_ylabel("Rejection rate")
         ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
 
+        if draw_grid:
+            ax.grid()
+
         # Customise order of items in legend
         ax.legend(handles=[noisy, ideal, theoretical[0]])
 
     with working_directory(FIGURE_DIR):
-        fig1, ax1 = plt.subplots()
-        plot(ax1, n_qubits, "Number of qubits, n")
-        fig1.savefig("figure1.pdf")
-        fig1.savefig("figure1.png")
+        fig, ax = plt.subplots()
+        plot(ax, n_qubits, "Number of qubits, n")
+        save_figure(fig, "rejection-rate-comparison-vs-n")
 
-        fig2, ax2 = plt.subplots()
-        plot(ax2, circuit_depth, "Circuit depth")
-        fig2.savefig("figure2.pdf")
-        fig2.savefig("figure2.png")
+        fig, ax = plt.subplots()
+        plot(ax, circuit_depth, "Circuit depth")
+        save_figure(fig, "rejection-rate-comparison-vs-depth")
 
-        fig3, ax3 = plt.subplots()
-        plot(ax3, n_erasable_gates, "Number of (erasable) gates, g")
-        fig3.savefig("figure3.pdf")
-        fig3.savefig("figure3.png")
+        fig, ax = plt.subplots()
+        plot(ax, n_erasable_gates, "Number of (erasable) gates, g")
+        save_figure(fig, "rejection-rate-comparison-vs-g")
 
 
 def plot_times():
@@ -472,7 +475,7 @@ if __name__ == "__main__":
 
     with working_directory(ROOT_DIR):
         # example_QFT()
-        example_QFT_sweep(plot_error_bars=True)
-        # plot_ideal_v_noisy(plot_error_bars=True)
+        example_QFT_sweep(plot_error_bars=True, draw_grid=True)
+        # plot_ideal_v_noisy(plot_error_bars=True, draw_grid=True)
         # plot_times()
         # plot_fidelities(plot_as_error=False)
