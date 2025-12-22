@@ -141,8 +141,8 @@ def save_figure(fig, name: str) -> None:
 
 
 def example_QFT_sweep(
-        plot_error_bars=True,
-        draw_grid=True,
+        confidence_level: float | None = 0.95,
+        draw_grid: bool = True,
     ):
     # Current dimon noise model
     noise_params = NoiseParams(
@@ -184,7 +184,9 @@ def example_QFT_sweep(
         results_list.append(results)
 
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
-        intervals[0, i], intervals[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+        intervals[0, i], intervals[1, i] = test.proportion_ci(
+            confidence_level if confidence_level is not None else 0.95
+        )  # defaults to Clopper-Pearson exact method
 
     rejection_rate = get_series(results_list, "rejection_rate")
     circuit_depth = get_series(results_list, "circuit_depth")
@@ -194,7 +196,7 @@ def example_QFT_sweep(
     n_accepted = results_list[0].n_accepted
     fidelity = get_series(results_list, "fidelity", n_accepted)
 
-    if plot_error_bars:
+    if confidence_level is not None:
         yerr = np.apply_along_axis(lambda row: np.abs(row - rejection_rate), 1, intervals)
     else:
         yerr = None
@@ -284,8 +286,8 @@ def example_QFT_sweep(
 
 
 def plot_ideal_v_noisy(
-        plot_error_bars=True,
-        draw_grid=True,
+        confidence_level: float | None = 0.95,
+        draw_grid: bool = True,
     ):
     n_qubits = np.array(range(2, 17))
 
@@ -300,7 +302,9 @@ def plot_ideal_v_noisy(
         results_list_ideal.append(results)
 
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
-        intervals_ideal[0, i], intervals_ideal[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+        intervals_ideal[0, i], intervals_ideal[1, i] = test.proportion_ci(
+            confidence_level if confidence_level is not None else 0.95
+        )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_ideal = get_series(results_list_ideal, "rejection_rate")
     circuit_depth = get_series(results_list_ideal, "circuit_depth")
@@ -318,7 +322,9 @@ def plot_ideal_v_noisy(
         results_list_noisy.append(results)
 
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
-        intervals_noisy[0, i], intervals_noisy[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+        intervals_noisy[0, i], intervals_noisy[1, i] = test.proportion_ci(
+            confidence_level if confidence_level is not None else 0.95
+        )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy = get_series(results_list_noisy, "rejection_rate")
 
@@ -334,11 +340,13 @@ def plot_ideal_v_noisy(
         results_list_noisy_circ.append(results)
 
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
-        intervals_noisy_circ[0, i], intervals_noisy_circ[1, i] = test.proportion_ci()  # defaults to Clopper-Pearson exact method
+        intervals_noisy_circ[0, i], intervals_noisy_circ[1, i] = test.proportion_ci(
+            confidence_level if confidence_level is not None else 0.95
+        )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy_circ = get_series(results_list_noisy_circ, "rejection_rate")
 
-    if plot_error_bars:
+    if confidence_level is not None:
         yerr_ideal = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_ideal), 1, intervals_ideal)
         yerr_noisy = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_noisy), 1, intervals_noisy)
         yerr_noisy_circ = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_noisy_circ), 1, intervals_noisy_circ)
