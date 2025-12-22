@@ -381,39 +381,6 @@ def plot_ideal_v_noisy(
         save_figure(fig, "rejection-rate-comparison-vs-g")
 
 
-def plot_times():
-    def plot(ax: Axes):
-        for filepath in sorted(Path(".").glob("*.csv")):
-            with open(filepath, "r") as file:
-                file_reader = csv.reader(file)
-                n_qubits = np.array(next(file_reader), dtype=int)
-                time = np.array(next(file_reader), dtype=float)
-
-            point_style = "x" if "cpu" in filepath.stem else "."
-            line_style = "-" if "sampler" in filepath.stem else "--"
-            fmt = point_style + line_style
-            label = filepath.stem.replace("log-", "")
-
-            ax.plot(n_qubits, time, fmt, label=f"{label} ({sum(time)})")
-
-        ax.set_xlabel("Number of qubits, n")
-        ax.set_ylabel("Simulation time (seconds)")
-        ax.legend()
-        ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
-
-    with working_directory(FIGURE_DIR):
-        fig1, ax1 = plt.subplots()
-        plot(ax1)
-        fig1.savefig("figure-time.pdf")
-        fig1.savefig("figure-time.png")
-
-        fig2, ax2 = plt.subplots()
-        ax2.set_yscale("log")
-        plot(ax2)
-        fig2.savefig("figure-time-log.pdf")
-        fig2.savefig("figure-time-log.png")
-
-
 def plot_fidelities(
         plot_as_error: bool = False,
         confidence_level: float | None = 0.95,
@@ -496,6 +463,39 @@ def plot_fidelities(
         save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
 
+def plot_times():
+    def plot(ax: Axes):
+        for filepath in sorted(Path(".").glob("*.csv")):
+            with open(filepath, "r") as file:
+                file_reader = csv.reader(file)
+                n_qubits = np.array(next(file_reader), dtype=int)
+                time = np.array(next(file_reader), dtype=float)
+
+            point_style = "x" if "cpu" in filepath.stem else "."
+            line_style = "-" if "sampler" in filepath.stem else "--"
+            fmt = point_style + line_style
+            label = filepath.stem.replace("log-", "")
+
+            ax.plot(n_qubits, time, fmt, label=f"{label} ({sum(time)})")
+
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Simulation time (seconds)")
+        ax.legend()
+        ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
+
+    with working_directory(FIGURE_DIR):
+        fig1, ax1 = plt.subplots()
+        plot(ax1)
+        fig1.savefig("figure-time.pdf")
+        fig1.savefig("figure-time.png")
+
+        fig2, ax2 = plt.subplots()
+        ax2.set_yscale("log")
+        plot(ax2)
+        fig2.savefig("figure-time-log.pdf")
+        fig2.savefig("figure-time-log.png")
+
+
 if __name__ == "__main__":
     matplotlib.rcParams["savefig.dpi"] = 300
     matplotlib.rcParams["savefig.bbox"] = "tight"
@@ -532,6 +532,7 @@ if __name__ == "__main__":
     with working_directory(ROOT_DIR):
         # example_QFT()
         example_QFT_sweep()
+
         # plot_ideal_v_noisy()
-        # plot_times()
         # plot_fidelities()
+        # plot_times()
