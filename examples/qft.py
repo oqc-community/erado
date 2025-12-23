@@ -203,6 +203,7 @@ def example_QFT_sweep(
 
     p = noise_params.erasure_rate
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
+    actual_shots_theoretical = n_accepted / (1 - p)**n_erasable_gates
 
     with working_directory(FIGURE_DIR):
         fig, ax = plt.subplots()
@@ -214,8 +215,8 @@ def example_QFT_sweep(
             ax.grid()
         save_figure(fig, "rejection-rate-vs-n")
 
-        # TODO: Error bars for total shots? Can be calculated from rejection rate error bars?
         fig, ax = plt.subplots()
+        ax.plot(n_qubits, actual_shots_theoretical, "--", color="grey")
         ax.plot(n_qubits, actual_shots, "x-")
         ax.set_yscale("log")
         ax.set_xlabel("Number of qubits, n")
@@ -225,6 +226,7 @@ def example_QFT_sweep(
         save_figure(fig, "total-shots-vs-n")
 
         fig, ax = plt.subplots()
+        ax.plot(n_qubits, actual_shots_theoretical / n_accepted, "--", color="grey")
         ax.plot(n_qubits, actual_shots / n_accepted, "x-")
         ax.set_yscale("log")
         ax.set_xlabel("Number of qubits, n")
@@ -307,7 +309,7 @@ def plot_ideal_v_noisy(
         )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_ideal = get_series(results_list_ideal, "rejection_rate")
-    circuit_depth = get_series(results_list_ideal, "circuit_depth")
+    actual_shots_ideal = get_series(results_list_ideal, "shots")
     n_erasable_gates = get_series(results_list_ideal, "n_erasable_gates")
 
     # Load noisy data
@@ -327,6 +329,7 @@ def plot_ideal_v_noisy(
         )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy = get_series(results_list_noisy, "rejection_rate")
+    actual_shots_noisy = get_series(results_list_noisy, "shots")
 
     # Load noisy data (noisy checks + circ)
     # (assumes circuit_depth and n_erasable_gates are the same)
@@ -345,6 +348,7 @@ def plot_ideal_v_noisy(
         )  # defaults to Clopper-Pearson exact method
 
     rejection_rate_noisy_circ = get_series(results_list_noisy_circ, "rejection_rate")
+    actual_shots_noisy_circ = get_series(results_list_noisy_circ, "shots")
 
     if confidence_level is not None:
         yerr_ideal = np.apply_along_axis(lambda row: np.abs(row - rejection_rate_ideal), 1, intervals_ideal)
@@ -356,9 +360,11 @@ def plot_ideal_v_noisy(
         yerr_noisy_circ = None
 
     p = 0.01
+    n_accepted = results_list_ideal[0].n_accepted
     rejection_rate_theoretical = 1 - (1 - p)**n_erasable_gates
+    actual_shots_theoretical = n_accepted / (1 - p)**n_erasable_gates
 
-    def plot(ax: Axes, xdata, xlabel):
+    def plot_rejection_rate(ax: Axes, xdata, xlabel):
         noisy_circ = ax.errorbar(xdata, rejection_rate_noisy_circ, yerr_noisy_circ, fmt="x-", label="noisy checks + circuit (depolarising 0.001+0.01)")
         noisy = ax.errorbar(xdata, rejection_rate_noisy, yerr_noisy, fmt="x-", label="noisy checks (falsepos = falseneg = 0.005)")
         ideal = ax.errorbar(xdata, rejection_rate_ideal, yerr_ideal, fmt="x-", label="ideal checks")
@@ -373,20 +379,36 @@ def plot_ideal_v_noisy(
         # Customise order of items in legend
         ax.legend(handles=[noisy_circ, noisy, ideal, theoretical[0]])
 
-    # TODO: total shots (+ proportion) in same vein as above
+    def plot(ax: Axes, xdata, xlabel, ydata_noisy_circ, ydata_noisy, ydata_ideal, ydata_theoretical):
+        theoretical = ax.plot(xdata, ydata_theoretical, "--", color="gray", label="ideal checks (theoretical)")
+        noisy_circ = ax.plot(xdata, ydata_noisy_circ, "x-", label="noisy checks + circuit (depolarising 0.001+0.01)")
+        noisy = ax.plot(xdata, ydata_noisy, "x-", label="noisy checks (falsepos = falseneg = 0.005)")
+        ideal = ax.plot(xdata, ydata_ideal, "x-", label="ideal checks")
+        ax.set_xlabel(xlabel)
+        ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
+
+        if draw_grid:
+            ax.grid()
+
+        # Customise order of items in legend
+        ax.legend(handles=[noisy_circ[0], noisy[0], ideal[0], theoretical[0]])
 
     with working_directory(FIGURE_DIR):
         fig, ax = plt.subplots()
-        plot(ax, n_qubits, "Number of qubits, n")
+        plot_rejection_rate(ax, n_qubits, "Number of qubits, n")
         save_figure(fig, "rejection-rate-comparison-vs-n")
 
         fig, ax = plt.subplots()
-        plot(ax, circuit_depth, "Circuit depth")
-        save_figure(fig, "rejection-rate-comparison-vs-depth")
+        plot(ax, n_qubits, "Number of qubits, n", actual_shots_noisy_circ, actual_shots_noisy, actual_shots_ideal, actual_shots_theoretical)
+        ax.set_ylabel("Total shots")
+        ax.set_yscale("log")
+        save_figure(fig, "total-shots-comparison-vs-n")
 
         fig, ax = plt.subplots()
-        plot(ax, n_erasable_gates, "Number of (erasable) gates, g")
-        save_figure(fig, "rejection-rate-comparison-vs-g")
+        plot(ax, n_qubits, "Number of qubits, n", actual_shots_noisy_circ / n_accepted, actual_shots_noisy / n_accepted, actual_shots_ideal / n_accepted, actual_shots_theoretical / n_accepted)
+        ax.set_ylabel(f"Total shots / target shots({n_accepted})")
+        ax.set_yscale("log")
+        save_figure(fig, "total-shots-proportion-comparison-vs-n")
 
 
 def plot_fidelities(
