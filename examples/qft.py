@@ -31,6 +31,7 @@ from dataclasses import dataclass
 import time
 from pathlib import Path
 import csv
+from collections.abc import Iterable
 
 
 ROOT_DIR = Path("data")
@@ -128,7 +129,6 @@ def example_QFT():
     run_simulation(noise_params, 16)
 
 
-# TODO: Flesh this out to enable running all plotting functions sequentially (with cached results etc.)
 n_figures: int = 0
 
 def save_figure(fig, name: str) -> None:
@@ -287,6 +287,37 @@ def example_QFT_sweep(
         save_figure(fig, "fidelity-vs-n")
 
 
+class ResultsCache:
+    def __init__(self):
+        self.cache: dict[Path, list[ErasureSimResults]] = {}
+
+    def get(self, path: Path, n_qubits: Iterable[int]) -> list[ErasureSimResults]:
+        print(f"Requested results from {path}")
+
+        path_full = path.resolve()
+        if (results_list := self.cache.get(path_full)) is None:
+            results_list = self._load(path_full, n_qubits)
+            self.cache[path_full] = results_list
+
+        return results_list
+
+    def _load(self, path: Path, n_qubits: Iterable[int]) -> list[ErasureSimResults]:
+        print(f"Loading results from {path}")
+
+        results_list = list[ErasureSimResults]()
+        for n in n_qubits:
+            filepath = path / f"qft_sweep_n{n}.json"
+            with open(filepath, "rb") as file:
+                results = ErasureSimResults.model_validate_json(file.read())
+
+            results_list.append(results)
+
+        return results_list
+
+
+results_cache = ResultsCache()
+
+
 def plot_ideal_v_noisy(
         confidence_level: float | None = 0.95,
         draw_grid: bool = True,
@@ -295,15 +326,9 @@ def plot_ideal_v_noisy(
     n_qubits = np.array(range(2, 17))
 
     # Load ideal data
-    results_list_ideal = list[ErasureSimResults]()
+    results_list_ideal = results_cache.get(Path("idealchecks-idealcirc-postselect"), n_qubits)
     intervals_ideal = np.zeros((2, len(n_qubits)))
-    for i, n in enumerate(n_qubits):
-        filepath = Path("ideal") / f"qft_sweep_n{n}.json"
-        with open(filepath, "rb") as file:
-            results = ErasureSimResults.model_validate_json(file.read())
-
-        results_list_ideal.append(results)
-
+    for i, results in enumerate(results_list_ideal):
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_ideal[0, i], intervals_ideal[1, i] = test.proportion_ci(
             confidence_level if confidence_level is not None else 0.95
@@ -314,16 +339,9 @@ def plot_ideal_v_noisy(
     n_erasable_gates = get_series(results_list_ideal, "n_erasable_gates")
 
     # Load noisy data
-    # (assumes circuit_depth and n_erasable_gates are the same)
-    results_list_noisy = list[ErasureSimResults]()
+    results_list_noisy = results_cache.get(Path("noisychecks-idealcirc-postselect"), n_qubits)
     intervals_noisy = np.zeros((2, len(n_qubits)))
-    for i, n in enumerate(n_qubits):
-        filepath = Path("noisy") / f"qft_sweep_n{n}.json"
-        with open(filepath, "rb") as file:
-            results = ErasureSimResults.model_validate_json(file.read())
-
-        results_list_noisy.append(results)
-
+    for i, results in enumerate(results_list_noisy):
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_noisy[0, i], intervals_noisy[1, i] = test.proportion_ci(
             confidence_level if confidence_level is not None else 0.95
@@ -333,16 +351,9 @@ def plot_ideal_v_noisy(
     actual_shots_noisy = get_series(results_list_noisy, "shots")
 
     # Load noisy data (noisy checks + circ)
-    # (assumes circuit_depth and n_erasable_gates are the same)
-    results_list_noisy_circ = list[ErasureSimResults]()
+    results_list_noisy_circ = results_cache.get(Path("noisychecks-noisycirc-postselect"), n_qubits)
     intervals_noisy_circ = np.zeros((2, len(n_qubits)))
-    for i, n in enumerate(n_qubits):
-        filepath = Path("noisy-circ") / f"qft_sweep_n{n}.json"
-        with open(filepath, "rb") as file:
-            results = ErasureSimResults.model_validate_json(file.read())
-
-        results_list_noisy_circ.append(results)
-
+    for i, results in enumerate(results_list_noisy):
         test = scipy.stats.binomtest(results.n_rejected, results.shots)
         intervals_noisy_circ[0, i], intervals_noisy_circ[1, i] = test.proportion_ci(
             confidence_level if confidence_level is not None else 0.95
@@ -432,13 +443,7 @@ def plot_fidelities(
             name = dir.name.split("-")
 
             if name[0] == component_1 and name[1] == component_2:
-                results_list = list[ErasureSimResults]()
-                for n in n_qubits:
-                    # TODO: Standardise above around this directory structure as much as possible.
-                    filepath = dir / "data" / f"qft_sweep_n{n}.json"
-                    with open(filepath, "rb") as file:
-                        results = ErasureSimResults.model_validate_json(file.read())
-                    results_list.append(results)
+                results_list = results_cache.get(dir, n_qubits)
 
                 n_accepted = results_list[0].n_accepted
                 fidelity = get_series(results_list, "fidelity", n_accepted)
