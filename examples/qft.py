@@ -290,6 +290,7 @@ def example_QFT_sweep(
 def plot_ideal_v_noisy(
         confidence_level: float | None = 0.95,
         draw_grid: bool = True,
+        draw_title: bool = True,
     ):
     n_qubits = np.array(range(2, 17))
 
@@ -371,7 +372,9 @@ def plot_ideal_v_noisy(
         theoretical = ax.plot(xdata, rejection_rate_theoretical, "--", color="gray", label="ideal checks (theoretical)")
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Rejection rate")
-        ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
+
+        if draw_title:
+            ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
 
         if draw_grid:
             ax.grid()
@@ -385,7 +388,9 @@ def plot_ideal_v_noisy(
         noisy = ax.plot(xdata, ydata_noisy, "x-", label="noisy checks (falsepos = falseneg = 0.005)")
         ideal = ax.plot(xdata, ydata_ideal, "x-", label="ideal checks")
         ax.set_xlabel(xlabel)
-        ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
+
+        if draw_title:
+            ax.set_title(f"QFT (linear connectivity) postselection, erasure rate {p}")
 
         if draw_grid:
             ax.grid()
@@ -415,6 +420,7 @@ def plot_fidelities(
         plot_as_error: bool = False,
         confidence_level: float | None = 0.95,
         draw_grid: bool = True,
+        draw_title: bool = True,
     ):
     n_qubits = np.array(range(2, 17))
 
@@ -477,23 +483,31 @@ def plot_fidelities(
     fig, ax = plt.subplots()
     component_1, component_2 = "idealchecks", "idealcirc"
     plot(ax, component_1, component_2)
+    if draw_title:
+        ax.set_title("ideal checks + ideal circuit")
     with working_directory(FIGURE_DIR):
         save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
     fig, ax = plt.subplots()
     component_1, component_2 = "noisychecks", "idealcirc"
     plot(ax, component_1, component_2)
+    if draw_title:
+        ax.set_title("noisy checks + ideal circuit")
     with working_directory(FIGURE_DIR):
         save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
     fig, ax = plt.subplots()
     component_1, component_2 = "noisychecks", "noisycirc"
     plot(ax, component_1, component_2)
+    if draw_title:
+        ax.set_title("noisy checks + noisy circuit (depolarising)")
     with working_directory(FIGURE_DIR):
         save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
 
-def plot_times():
+def plot_times(
+        draw_title: bool = True,
+    ):
     def plot(ax: Axes):
         for filepath in sorted(Path(".").glob("*.csv")):
             with open(filepath, "r") as file:
@@ -511,7 +525,8 @@ def plot_times():
         ax.set_xlabel("Number of qubits, n")
         ax.set_ylabel("Simulation time (seconds)")
         ax.legend()
-        ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
+        if draw_title:
+            ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
 
     with working_directory(FIGURE_DIR):
         fig1, ax1 = plt.subplots()
