@@ -131,6 +131,7 @@ def example_QFT():
 
 n_figures: int = 0
 
+
 def save_figure(fig, name: str) -> None:
     global n_figures
     n_figures += 1
@@ -138,6 +139,11 @@ def save_figure(fig, name: str) -> None:
     file_stem = f"figure{n_figures}-{name}"
     fig.savefig(file_stem + ".pdf")
     fig.savefig(file_stem + ".png")
+
+
+def reset_figure_count() -> None:
+    global n_figures
+    n_figures = 0
 
 
 def example_QFT_sweep(
@@ -510,7 +516,40 @@ def plot_fidelities(
         save_figure(fig, f"fidelity-{component_1}-{component_2}")
 
 
-def plot_times(
+def plot_times_for_dataset(
+        draw_title: bool = True,
+    ):
+    def plot(ax: Axes):
+        for filepath in sorted(Path(".").glob("*/*.csv")):
+            with open(filepath, "r") as file:
+                file_reader = csv.reader(file)
+                n_qubits = np.array(next(file_reader), dtype=int)
+                time = np.array(next(file_reader), dtype=float)
+
+            total_s = sum(time)
+            total_hr = total_s / 60**2
+            ax.plot(n_qubits, time, "x-", label=f"{filepath.parent} ({total_s}|{total_hr:.1f})")
+
+        ax.set_xlabel("Number of qubits, n")
+        ax.set_ylabel("Simulation time (seconds)")
+        ax.grid()
+        ax.legend()
+        if draw_title:
+            ax.set_title("ErasureCircuitSampler on lhr3-nr1-gpu-1 (with total time in sec|hr)")
+
+    fig, ax = plt.subplots()
+    plot(ax)
+    with working_directory(FIGURE_DIR):
+        save_figure(fig, "time-dataset")
+
+    fig, ax = plt.subplots()
+    ax.set_yscale("log")
+    plot(ax)
+    with working_directory(FIGURE_DIR):
+        save_figure(fig, "time-dataset-log")
+
+
+def plot_times_for_backends(
         draw_title: bool = True,
     ):
     def plot(ax: Axes):
@@ -534,16 +573,14 @@ def plot_times(
             ax.set_title("ErasureCircuitSampler/ErasurePass (with total time in seconds)")
 
     with working_directory(FIGURE_DIR):
-        fig1, ax1 = plt.subplots()
-        plot(ax1)
-        fig1.savefig("figure-time.pdf")
-        fig1.savefig("figure-time.png")
+        fig, ax = plt.subplots()
+        plot(ax)
+        save_figure(fig, "time-backends")
 
-        fig2, ax2 = plt.subplots()
-        ax2.set_yscale("log")
-        plot(ax2)
-        fig2.savefig("figure-time-log.pdf")
-        fig2.savefig("figure-time-log.png")
+        fig, ax = plt.subplots()
+        ax.set_yscale("log")
+        plot(ax)
+        save_figure(fig, "time-backends-log")
 
 
 if __name__ == "__main__":
@@ -585,4 +622,6 @@ if __name__ == "__main__":
 
         # plot_ideal_v_noisy()
         # plot_fidelities()
-        # plot_times()
+        # plot_times_for_dataset()
+
+        # plot_times_for_backends()
