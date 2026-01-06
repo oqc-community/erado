@@ -307,6 +307,7 @@ class ErasurePassJob:
                         i,
                         0,
                         i,
+                        0,
                     ))
 
         # Restore original state of backend's noise model

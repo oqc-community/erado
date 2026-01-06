@@ -99,7 +99,7 @@ class FidelityFunctor:
         """
         index = info.start + info.i
         try:
-            final_state: quantum_info.Statevector | quantum_info.DensityMatrix = info.result.data(0)[STATE_LABEL][info.i_result]
+            final_state: quantum_info.Statevector | quantum_info.DensityMatrix = info.result.data(info.i_experiment)[STATE_LABEL][info.i_shot]
             ideal_state = self._circuit_sv if self._circuit_sv is not None else calculate_statevector(info.model.circuit)
 
             # If there is one extra qubit, assume it is ERASER_QREG, which is always left in the 0 state

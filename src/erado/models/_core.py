@@ -171,9 +171,10 @@ class ShotInfo:
     model: ErasureModel
     result: qiskit.result.Result
     state: CircuitState
-    i: int         # Shot number within this process
-    start: int     # Initial global index of this process
-    i_result: int  # Shot number within the qiskit Result
+    i: int             # Shot number within this process
+    start: int         # Initial global index of this process
+    i_shot: int        # Shot number within the qiskit result shots
+    i_experiment: int  # Shot number within the qiskit result experiments
 
 
 SNAPSHOT_GATES = [

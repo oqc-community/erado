@@ -210,36 +210,91 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
         """
-        if multiprocess:
-            # Invoke _run on multiple processes on subsets of the problem
-            counts = Counter[str]()
-            with ProcessPoolExecutor(
-                    initializer=self._reseed,
-                    mp_context=multiprocessing.get_context("spawn"),
-                ) as executor:
-                max_workers = os.process_cpu_count()  # this is the default since Python 3.13
-                shots_each = shots // max_workers
-                counters_futures = [
-                    executor.submit(self._run, backend, shots_each, callbacks, i * shots_each)
-                    for i in range(max_workers - 1)
-                ]
-                counters_futures.append(
-                    executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks,
-                                    (max_workers - 1) * shots_each),
-                )
+        # if multiprocess:
+        #     # Invoke _run on multiple processes on subsets of the problem
+        #     counts = Counter[str]()
+        #     with ProcessPoolExecutor(
+        #             initializer=self._reseed,
+        #             mp_context=multiprocessing.get_context("spawn"),
+        #         ) as executor:
+        #         max_workers = os.process_cpu_count()  # this is the default since Python 3.13
+        #         shots_each = shots // max_workers
+        #         counters_futures = [
+        #             executor.submit(self._run, backend, shots_each, callbacks, i * shots_each)
+        #             for i in range(max_workers - 1)
+        #         ]
+        #         counters_futures.append(
+        #             executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks,
+        #                             (max_workers - 1) * shots_each),
+        #         )
 
-                for counter in as_completed(counters_futures):
-                    counts += counter.result()
-        else:
-            counts = self._run(backend, shots, callbacks)
+        #         for counter in as_completed(counters_futures):
+        #             counts += counter.result()
+        # else:
+        #     counts = self._run(backend, shots, callbacks)
+
+        counts = self._run(backend, shots, callbacks)
 
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
-                        for key, value in counts.items()})
+        # return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+        #                 for key, value in counts.items()})
+        return counts
 
     def _run(
+            self,
+            backend: BackendV2,
+            shots: int,
+            callbacks: Sequence[ShotCallback],
+            start: int = 0,
+        ) -> Counter[CircuitState]:
+        import time
+        import qiskit.providers
+
+        t0 = time.time()
+        samples = [self.sample() for _ in range(shots)]
+        t1 = time.time()
+        _logger.debug(f"Generated samples (took {t1-t0} seconds).")
+
+        circuits = [sample[0] for sample in samples]
+        erased_qubits = [sample[2] for sample in samples]
+
+        job: qiskit.providers.JobV1 = backend.run(
+            circuits,
+            shots=1,
+            seed_simulator=self._rng.integers(2**32),
+        )  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
+
+        t0 = time.time()
+        result = job.result()
+        t1 = time.time()
+        _logger.debug(f"Obtained job result (took {t1-t0} seconds).")
+
+        qubit_states = [next(iter(shot.keys())) for shot in result.get_counts()]
+        erasure_states = ["".join(("1" if q in erased_qubits else "0"
+                                  for q in reversed(circuit.qubits)))
+                          for circuit in circuits]
+
+        circuit_states = [CircuitState.from_qiskit_string(erasure_state + qubit_state, circuit.num_qubits)
+                          for erasure_state, qubit_state, circuit in zip(qubit_states, erasure_states, circuits)]
+
+        if len(callbacks) > 0:
+            for i, state in enumerate(circuit_states):
+                for callback in callbacks:
+                    callback(ShotInfo(
+                        self,
+                        result,
+                        state,
+                        i,
+                        0,
+                        0,
+                        i,
+                    ))
+
+        return Counter(circuit_states)
+
+    def _run_async(
             self,
             backend: BackendV2,
             shots: int,
@@ -301,6 +356,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                                 CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                                 i,
                                 start,
+                                0,
                                 0,
                             ))
 
