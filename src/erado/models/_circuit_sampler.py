@@ -15,7 +15,10 @@ from qiskit.circuit import (
     Qubit,
     CircuitInstruction,
 )
-from qiskit.providers import BackendV2
+from qiskit.providers import (
+    BackendV2,
+    JobV1,
+)
 
 import numpy as np
 
@@ -180,6 +183,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             # await asyncio.sleep(1)
             yield self.sample()
 
+    # TODO: change multiprocess default to false (because the new method for false is better)
     def run(
             self,
             backend: BackendV2,
@@ -233,13 +237,17 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         # else:
         #     counts = self._run(backend, shots, callbacks)
 
+        # NEW METHOD
         counts = self._run(backend, shots, callbacks)
+
+        # OG METHOD
+        # counts = self._run_og(backend, shots, callbacks)
+        # counts = Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+        #                 for key, value in counts.items()})
 
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
 
-        # return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
-        #                 for key, value in counts.items()})
         return counts
 
     def _run(
@@ -247,37 +255,32 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback],
-            start: int = 0,
         ) -> Counter[CircuitState]:
-        import time
-        import qiskit.providers
-
-        t0 = time.time()
         samples = [self.sample() for _ in range(shots)]
-        t1 = time.time()
-        _logger.debug(f"Generated samples (took {t1-t0} seconds).")
+        circuit_list = [sample[0] for sample in samples]
+        erased_qubits_list = [sample[2] for sample in samples]
 
-        circuits = [sample[0] for sample in samples]
-        erased_qubits = [sample[2] for sample in samples]
-
-        job: qiskit.providers.JobV1 = backend.run(
-            circuits,
+        job: JobV1 = backend.run(
+            circuit_list,
             shots=1,
             seed_simulator=self._rng.integers(2**32),
         )  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
 
-        t0 = time.time()
         result = job.result()
-        t1 = time.time()
-        _logger.debug(f"Obtained job result (took {t1-t0} seconds).")
 
-        qubit_states = [next(iter(shot.keys())) for shot in result.get_counts()]
+        # Ensure counts is a list (if shots==1, qiskit will instead return the sole element)
+        counts = result.get_counts()
+        if not isinstance(counts, list):
+            counts = [counts]
+
+        qubit_states = [next(iter(shot)) for shot in counts]
+
         erasure_states = ["".join(("1" if q in erased_qubits else "0"
-                                  for q in reversed(circuit.qubits)))
-                          for circuit in circuits]
+                                   for q in reversed(circuit.qubits)))
+                          for erased_qubits, circuit in zip(erased_qubits_list, circuit_list)]
 
         circuit_states = [CircuitState.from_qiskit_string(erasure_state + qubit_state, circuit.num_qubits)
-                          for erasure_state, qubit_state, circuit in zip(qubit_states, erasure_states, circuits)]
+                          for erasure_state, qubit_state, circuit in zip(erasure_states, qubit_states, circuit_list)]
 
         if len(callbacks) > 0:
             for i, state in enumerate(circuit_states):
@@ -294,6 +297,60 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
         return Counter(circuit_states)
 
+    def _run_og(
+            self,
+            backend: BackendV2,
+            shots: int,
+            callbacks: Sequence[ShotCallback],
+            start: int = 0,
+        ) -> Counter[str]:
+        # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            def all_shots() -> Generator[str]:
+                for i in range(shots):
+                    circuit, _, erased_qubits = self.sample()
+
+                    # TODO: Tidy this here and elsewhere by splitting out job then future?
+                    future = executor.submit(lambda: backend.run(
+                            circuit,
+                            shots=1,
+                            seed_simulator=self._rng.integers(2**32),
+                        ).result())  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
+                    _, not_done = wait((future,), timeout=self.timeout)
+
+                    # If timed out, cleanly throw/kill based on the status of this process
+                    if len(not_done) > 0:
+                        _logger.error("ErasureCircuitSampler shot timed out and will now attempt to terminate.")
+                        pid = os.getpid()
+                        if pid == self._main_pid:
+                            raise TimeoutError("Single shot timed out.")
+                        else:
+                            os.kill(os.getpid(), 9)
+
+                    result = future.result()
+
+                    erasure_state = "".join(("1" if q in erased_qubits else "0"
+                                             for q in reversed(circuit.qubits)))
+                    state: str = erasure_state + next(iter(result.get_counts()))
+
+                    for callback in callbacks:
+                        callback(ShotInfo(
+                            self,
+                            result,
+                            CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                            i,
+                            start,
+                            0,
+                            0,
+                        ))
+
+                    yield state
+
+            counts = Counter(all_shots())
+
+        return counts
+
+    # TODO: This is maybe useless, so probably just remove?
     def _run_async(
             self,
             backend: BackendV2,
@@ -346,7 +403,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                         result = future.result()
 
                         erasure_state = "".join(("1" if q in erased_qubits else "0"
-                                                for q in reversed(circuit.qubits)))
+                                                 for q in reversed(circuit.qubits)))
                         state: str = erasure_state + next(iter(result.get_counts()))
 
                         for callback in callbacks:
