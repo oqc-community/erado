@@ -60,15 +60,14 @@ def test_measure_EOL_some(model_type: type[ErasureModel]):
 
 
 def test_multiprocessing_deadlock():
-    """Test for regressions in the Qiskit multiprocessing bug.
+    """Test for regressions in multiprocessing hanging bugs.
 
-    Qiskit seems to introduce some buggy behaviour in backend runs due to its own use of
+    Qiskit can introduce some buggy behaviour in backend runs due to its own use of
     multithreading. If a backend simulation job is performed before a multiprocess-enabled
     `ErasureCircuitSampler` run, this run can deadlock, even if a new backend object is created.
 
-    This was originally only 'solved' by performing simulation runs in strictly different programs.
-    However, it now seems that I've fixed it by some careful use of multiprocessing context
-    settings. This test is designed to catch any regressions in this bugfix.
+    This is avoided by careful use of multiprocessing contexts and start methods (i.e. avoiding
+    `fork` on POSIX Python <3.14).
     """
     circuit = circuits.ghz(N)
     circuit.measure_all()

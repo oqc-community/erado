@@ -11,6 +11,7 @@ from collections.abc import (
 )
 from pathlib import Path
 import multiprocessing
+import multiprocessing.context
 import contextlib
 import os
 
@@ -176,3 +177,20 @@ def working_directory(path: Path, mkdir: bool = True) -> Generator[None]:
         yield
     finally:
         os.chdir(cwd)
+
+
+def get_mp_context() -> multiprocessing.context.DefaultContext | multiprocessing.context.ForkServerContext:
+    """Obtain a suitable multiprocessing context for the current platform.
+
+    This ensures that `fork` is not the start method, instead preferring `forkserver`.
+
+    Returns:
+        Multiprocessing context.
+    """
+    # The default start method on POSIX was changed in Python 3.14 from 'fork' to 'forkserver', for good reason.
+    # So, if 'fork' is detected (e.g. on Python <3.14), change it to 'forkserver'.
+    context = multiprocessing.get_context()
+    if context.get_start_method() == "fork":
+        return multiprocessing.get_context("forkserver")
+    else:
+        return context

@@ -179,7 +179,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
         """
         # multiprocessing defaults to False, so only inject SharedMemoryManager if explicitly enabled by a kwarg
         multiprocess = kwarg if isinstance(kwarg := kwargs.get("multiprocess"), bool) else False
-        with (SharedMemoryManager(ctx=multiprocessing.get_context("spawn"))
+        with (SharedMemoryManager(ctx=util.get_mp_context())
               if multiprocess
               else contextlib.nullcontext()) as smm:
             # A new FidelityFunctor is needed for each postselection round

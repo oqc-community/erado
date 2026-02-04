@@ -8,6 +8,7 @@ from erado.models._core import (
 from erado.util import (
     MultiprocessingRNG,
     NPVector,
+    get_mp_context,
 )
 
 from qiskit import QuantumCircuit
@@ -210,7 +211,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             counts = Counter[str]()
             with ProcessPoolExecutor(
                     initializer=self._reseed,
-                    mp_context=multiprocessing.get_context("spawn"),
+                    mp_context=get_mp_context(),
                 ) as executor:
                 max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
@@ -296,7 +297,6 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                 for i in range(shots):
                     circuit, _, erased_qubits = self.sample()
 
-                    # TODO: Tidy this here and elsewhere by splitting out job then future?
                     future = executor.submit(lambda: backend.run(
                             circuit,
                             shots=1,
