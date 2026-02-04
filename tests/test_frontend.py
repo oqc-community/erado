@@ -80,6 +80,6 @@ def test_multiprocessing_deadlock():
     circuit_sampler = ErasureCircuitSampler(circuit=circuit, erasure_rate=erasure_rate)
     pass_job = ErasurePassJob(circuit=circuit, erasure_rate=erasure_rate)
 
-    circuit_sampler.run(backend, shots)
+    circuit_sampler.run(backend, shots, multiprocess=True)
     pass_job.run(backend, shots)
-    circuit_sampler.run(backend, shots)
+    circuit_sampler.run(backend, shots, multiprocess=True)

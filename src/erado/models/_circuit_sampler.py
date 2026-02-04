@@ -32,12 +32,10 @@ from collections import Counter
 from collections.abc import (
     Generator,
     Sequence,
-    AsyncGenerator,
 )
 import os
 import logging
 import multiprocessing
-import asyncio
 
 
 _logger = logging.getLogger(__name__)
@@ -175,32 +173,25 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
         return erased_circuit, erasure_events, erased_qubits
 
-    async def sample_generator(
-            self,
-            shots: int,
-        ) -> AsyncGenerator[tuple[QuantumCircuit, NPVector[np.int64], set[Qubit]]]:
-        for _ in range(shots):
-            # await asyncio.sleep(1)
-            yield self.sample()
-
-    # TODO: change multiprocess default to false (because the new method for false is better)
     def run(
             self,
             backend: BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
-            multiprocess: bool = True,
+            multiprocess: bool = False,
             **_,
         ) -> Counter[CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
-        As this is CPU-bound in the `sample` method, multiprocessing is used to parallelise the
-        workload for considerable speedup. This can be disabled with the `multiprocess` parameter.
+        As this simulation involves a single shot for each in a sequence of distinct circuits,
+        multiprocessing may be used to potentially achieve notable speedup. This can be enabled
+        with the `multiprocess` parameter. However, it may often still be faster to allow Qiskit
+        to batch-process the sequence of circuits itself, so it is disabled by default.
 
-        If any single shot within a child process takes longer than the `timeout` property
-        (default: 10 seconds) to complete, the child will kill itself. This will manifest as either
-        a `TimeoutError` or `BrokenProcessPool` exception. To disable this timeout completely, set
-        `timeout` to None.
+        When using multiprocessing, if any single shot within a child process takes longer than the
+        `timeout` property (default: 10 seconds) to complete, the child will kill itself. This will
+        manifest as either a `TimeoutError` or `BrokenProcessPool` exception. To disable this
+        timeout completely, set `timeout` to None.
 
         Args:
             backend: Circuit simulator backend.
@@ -214,36 +205,31 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
         """
-        # if multiprocess:
-        #     # Invoke _run on multiple processes on subsets of the problem
-        #     counts = Counter[str]()
-        #     with ProcessPoolExecutor(
-        #             initializer=self._reseed,
-        #             mp_context=multiprocessing.get_context("spawn"),
-        #         ) as executor:
-        #         max_workers = os.process_cpu_count()  # this is the default since Python 3.13
-        #         shots_each = shots // max_workers
-        #         counters_futures = [
-        #             executor.submit(self._run, backend, shots_each, callbacks, i * shots_each)
-        #             for i in range(max_workers - 1)
-        #         ]
-        #         counters_futures.append(
-        #             executor.submit(self._run, backend, shots_each + (shots % max_workers), callbacks,
-        #                             (max_workers - 1) * shots_each),
-        #         )
+        if multiprocess:
+            # Invoke _run_mp on multiple processes on subsets of the problem
+            counts = Counter[str]()
+            with ProcessPoolExecutor(
+                    initializer=self._reseed,
+                    mp_context=multiprocessing.get_context("spawn"),
+                ) as executor:
+                max_workers = os.process_cpu_count()  # this is the default since Python 3.13
+                shots_each = shots // max_workers
+                counters_futures = [
+                    executor.submit(self._run_mp, backend, shots_each, callbacks, i * shots_each)
+                    for i in range(max_workers - 1)
+                ]
+                counters_futures.append(
+                    executor.submit(self._run_mp, backend, shots_each + (shots % max_workers), callbacks,
+                                    (max_workers - 1) * shots_each),
+                )
 
-        #         for counter in as_completed(counters_futures):
-        #             counts += counter.result()
-        # else:
-        #     counts = self._run(backend, shots, callbacks)
+                for counter in as_completed(counters_futures):
+                    counts += counter.result()
 
-        # NEW METHOD
-        counts = self._run(backend, shots, callbacks)
-
-        # OG METHOD
-        # counts = self._run_og(backend, shots, callbacks)
-        # counts = Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
-        #                 for key, value in counts.items()})
+            counts = Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+                        for key, value in counts.items()})
+        else:
+            counts = self._run(backend, shots, callbacks)
 
         if counts.total() != shots:
             raise RuntimeError("Total result count does not equal requested number of shots.")
@@ -297,7 +283,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
         return Counter(circuit_states)
 
-    def _run_og(
+    def _run_mp(
             self,
             backend: BackendV2,
             shots: int,
@@ -348,88 +334,6 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
             counts = Counter(all_shots())
 
-        return counts
-
-    # TODO: This is maybe useless, so probably just remove?
-    def _run_async(
-            self,
-            backend: BackendV2,
-            shots: int,
-            callbacks: Sequence[ShotCallback],
-            start: int = 0,
-        ) -> Counter[str]:
-        # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
-        async def run_shots() -> Counter[str]:
-            counts = Counter[str]()
-
-            maxsize = 0  # infinite size
-            queue = asyncio.Queue[tuple[QuantumCircuit, set[Qubit]]](maxsize)
-
-            async def producer() -> None:
-                async for circuit, _, erased_qubits in self.sample_generator(shots):
-                    await queue.put((circuit, erased_qubits))
-                    _logger.debug("PUT")
-                queue.shutdown()
-                _logger.debug("PRODUCER FINISHED")
-
-            async def consumer() -> None:
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    for i in range(shots):
-                        circuit, erased_qubits = await queue.get()
-                        _logger.debug("GET")
-
-                        # TODO: See if asyncio.to_thread works after getting this working.
-                        future = executor.submit(lambda: backend.run(
-                                circuit,
-                                shots=1,
-                                seed_simulator=self._rng.integers(2**32),
-                            ).result())  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
-                        # _, not_done = wait((future,), timeout=self.timeout)
-
-                        async_future = asyncio.wrap_future(future)
-                        try:
-                            await asyncio.wait_for(async_future, self.timeout)
-                        except TimeoutError:
-                            # If timed out, cleanly throw/kill based on the status of this process
-                            _logger.error("ErasureCircuitSampler shot timed out and will now attempt to terminate.")
-                            pid = os.getpid()
-                            if pid == self._main_pid:
-                                raise TimeoutError("Single shot timed out.")
-                            else:
-                                os.kill(os.getpid(), 9)
-
-                        _logger.debug("PROCESSED")
-
-                        result = future.result()
-
-                        erasure_state = "".join(("1" if q in erased_qubits else "0"
-                                                 for q in reversed(circuit.qubits)))
-                        state: str = erasure_state + next(iter(result.get_counts()))
-
-                        for callback in callbacks:
-                            callback(ShotInfo(
-                                self,
-                                result,
-                                CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
-                                i,
-                                start,
-                                0,
-                                0,
-                            ))
-
-                        counts[state] += 1
-
-            # event_loop = asyncio.get_event_loop()
-            # event_loop.create_task(producer())
-            # event_loop.create_task(consumer())
-            async with asyncio.TaskGroup() as tg:
-                # tg.create_task(producer())
-                tg.create_task(consumer())
-                tg.create_task(producer())
-
-            return counts
-
-        counts = asyncio.run(run_shots())
         return counts
 
 

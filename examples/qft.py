@@ -110,7 +110,6 @@ def run_simulation(
         shots,
         postselect=True,
         get_fidelities=True,
-        # multiprocess=False,
     )
     t1 = time.time()
     dt = t1 - t0

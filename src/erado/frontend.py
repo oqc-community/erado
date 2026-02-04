@@ -177,8 +177,8 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
         Returns:
             Data structure of results and statistics from the simulation.
         """
-        # multiprocessing defaults to True, so inject SharedMemoryManager unless explicitly disabled by a kwarg
-        multiprocess = kwarg if isinstance(kwarg := kwargs.get("multiprocess"), bool) else True
+        # multiprocessing defaults to False, so only inject SharedMemoryManager if explicitly enabled by a kwarg
+        multiprocess = kwarg if isinstance(kwarg := kwargs.get("multiprocess"), bool) else False
         with (SharedMemoryManager(ctx=multiprocessing.get_context("spawn"))
               if multiprocess
               else contextlib.nullcontext()) as smm:
