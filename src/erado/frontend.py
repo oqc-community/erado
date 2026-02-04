@@ -201,7 +201,9 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
                 n_remaining = n_rejected
                 while n_remaining > 0:
                     if get_fidelities:
-                        fidelity_functors.append(fidelity_functor := fidelity.FidelityFunctor(n_remaining, self.model.circuit, smm))
+                        fidelity_functors.append(fidelity_functor := fidelity.FidelityFunctor(n_remaining,
+                                                                                              self.model.circuit,
+                                                                                              smm))
 
                     counts.update(self._run_once(backend, n_remaining, fidelity_functor, kwargs))
                     total_shots += n_remaining

@@ -106,7 +106,8 @@ class ErasurePass(TransformationPass):
             erasure_cargs = [erasure_creg[dag.find_bit(qarg)[0]] for qarg in node.qargs]
             eraser_circuit = QuantumCircuit(erasure_qreg, ClassicalRegister(bits=erasure_cargs))
             for carg in erasure_cargs:
-                eraser_circuit.append(Measure(), [erasure_qreg], [carg])  # This 0 state is flipped pre-measurement by the noise channel
+                # This 0 state is flipped pre-measurement by the noise channel
+                eraser_circuit.append(Measure(), [erasure_qreg], [carg])
                 eraser_circuit.append(Reset(), [erasure_qreg])
 
             # Instantiate mini-DAG and attach mini-registers

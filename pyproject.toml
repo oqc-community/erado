@@ -57,6 +57,7 @@ ignore_fail = true
 
 [tool.pyright]
 typeCheckingMode = "standard"
+reportImplicitOverride = "error"
 exclude = [
     "typings",
 
@@ -68,6 +69,7 @@ exclude = [
 
 
 [tool.ruff]
+line-length = 120
 extend-exclude = [
     "typings",
     "examples",
@@ -80,6 +82,7 @@ ignore = [
     "ANN204",  # Don't require return types on 'special' methods
 ]
 select = [
+    "E",       # Enable pycodestyle rules (line length etc.)
     "D",       # Enable pydocstyle rules
     "D401",    # Docstrings must have imperative mood
     "ANN",     # Type annotations are mandatory
