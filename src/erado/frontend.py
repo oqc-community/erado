@@ -12,7 +12,6 @@ import pydantic
 import numpy as np
 
 from collections import Counter
-import multiprocessing
 from multiprocessing.managers import SharedMemoryManager
 import contextlib
 

@@ -36,7 +36,6 @@ from collections.abc import (
 )
 import os
 import logging
-import multiprocessing
 
 
 _logger = logging.getLogger(__name__)
