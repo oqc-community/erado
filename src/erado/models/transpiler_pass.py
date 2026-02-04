@@ -1,4 +1,6 @@
-from erado.models._core import (
+"""Defines the transpiler-pass simulation model."""
+
+from erado.models.core import (
     EXEMPT_GATES,
     SNAPSHOT_GATES,
     CircuitState,

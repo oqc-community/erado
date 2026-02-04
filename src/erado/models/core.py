@@ -1,3 +1,5 @@
+"""Defines the core erasure simulation components."""
+
 from qiskit import QuantumCircuit
 from qiskit.providers import BackendV2
 import qiskit.result

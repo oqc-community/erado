@@ -1,4 +1,6 @@
-from erado.models._core import (
+"""Defines the circuit-sampler simulation model."""
+
+from erado.models.core import (
     EXEMPT_GATES,
     CircuitState,
     ShotCallback,

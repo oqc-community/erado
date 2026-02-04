@@ -95,7 +95,7 @@ select = [
     "ANN201",  # Don't require "-> None" on every test function
 ]
 "__init__.py" = [
-    "F403",    # Allow wildcard imports in __init__.py (__all__ should be defined in private modules)
+    "F403",    # Allow wildcard imports in __init__.py (__all__ should be defined in such imported modules)
 ]
 
 [tool.ruff.lint.pydocstyle]
