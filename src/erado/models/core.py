@@ -1,22 +1,22 @@
 """Defines the core erasure simulation components."""
 
-from qiskit import QuantumCircuit
-from qiskit.providers import BackendV2
+import qiskit
+import qiskit.providers
 import qiskit.result
 
 import pydantic
 
+import dataclasses
+import collections
+from collections.abc import (
+    Callable,
+    Sequence,
+)
 from typing import (
     Protocol,
     Self,
     override,
 )
-from collections import Counter
-from collections.abc import (
-    Callable,
-    Sequence,
-)
-from dataclasses import dataclass
 
 
 class CircuitState(pydantic.BaseModel):
@@ -107,7 +107,7 @@ class CircuitState(pydantic.BaseModel):
         return handler(value)
 
 
-def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
+def postselect_counts(counts: collections.Counter[CircuitState]) -> collections.Counter[str]:
     """Filter a state counter to only non-erased states.
 
     Args:
@@ -116,7 +116,7 @@ def postselect_counts(counts: Counter[CircuitState]) -> Counter[str]:
     Returns:
         Counter of non-erased measurement states.
     """
-    counter = Counter[str]()
+    counter = collections.Counter[str]()
     for state, count in counts.items():
         if "1" not in state.erasure:
             counter[state.measure] = count
@@ -133,7 +133,7 @@ class ErasureModel(Protocol):
     Any class fulfilling this protocol may be used with `frontend.ErasureSimFrontend`.
     """
     @property
-    def circuit(self) -> QuantumCircuit:
+    def circuit(self) -> qiskit.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         ...
 
@@ -142,17 +142,17 @@ class ErasureModel(Protocol):
         """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
         ...
 
-    def __init__(self, circuit: QuantumCircuit, erasure_rate: float):
+    def __init__(self, circuit: qiskit.QuantumCircuit, erasure_rate: float):
         """Construct a model with a Qiskit circuit and uniform erasure rate."""
         ...
 
     def run(
             self,
-            backend: BackendV2,
+            backend: qiskit.providers.BackendV2,
             shots: int,
             callbacks: Sequence[ShotCallback] = [],
             **_,
-        ) -> Counter[CircuitState]:
+        ) -> collections.Counter[CircuitState]:
         """Execute an erasure simulation using this model.
 
         Args:
@@ -167,7 +167,7 @@ class ErasureModel(Protocol):
         ...
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ShotInfo:
     """Data structure of per-shot information provided to callbacks."""
     model: ErasureModel

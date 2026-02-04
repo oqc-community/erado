@@ -7,9 +7,9 @@ from qiskit import quantum_info
 
 import numpy as np
 
-from collections.abc import Generator
-from multiprocessing.managers import SharedMemoryManager
 import logging
+from multiprocessing import managers
+from collections.abc import Generator
 
 
 _logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class FidelityFunctor:
             self,
             shots: int,
             circuit: qiskit.QuantumCircuit | None = None,
-            smm: SharedMemoryManager | None = None,
+            smm: managers.SharedMemoryManager | None = None,
         ):
         """Construct a new `FidelityFunctor`.
 

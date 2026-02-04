@@ -2,18 +2,18 @@
 
 import numpy as np
 import pydantic
-import typing_extensions
+from typing_extensions import Annotated
 
+import pathlib
+import multiprocessing
+import multiprocessing.context
+import contextlib
+import os
 from collections.abc import (
     Iterable,
     Generator,
     Sized,
 )
-from pathlib import Path
-import multiprocessing
-import multiprocessing.context
-import contextlib
-import os
 
 
 type NPVector[T: np.generic] = np.ndarray[tuple[int], np.dtype[T]]
@@ -49,7 +49,7 @@ def _nptensor_validator(value: object) -> NPTensor:
 
     raise ValueError("Object is neither an NPTensor nor a built-in list.")
 
-type NPPydantic[T: NPTensor] = typing_extensions.Annotated[
+type NPPydantic[T: NPTensor] = Annotated[
     T,
     pydantic.PlainSerializer(_nptensor_serialiser),
     pydantic.BeforeValidator(_nptensor_validator),
@@ -155,7 +155,7 @@ class MultiprocessingRNG:
 
 
 @contextlib.contextmanager
-def working_directory(path: Path, mkdir: bool = True) -> Generator[None]:
+def working_directory(path: pathlib.Path, mkdir: bool = True) -> Generator[None]:
     """Context manager for safely and temporarily changing the current working directory.
 
     Examples:
@@ -170,7 +170,7 @@ def working_directory(path: Path, mkdir: bool = True) -> Generator[None]:
     if mkdir:
         path.mkdir(exist_ok=True, parents=True)
 
-    cwd = Path.cwd()
+    cwd = pathlib.Path.cwd()
     os.chdir(path)
 
     try:

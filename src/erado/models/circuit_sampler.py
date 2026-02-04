@@ -1,49 +1,28 @@
 """Defines the circuit-sampler simulation model."""
 
-from erado.models.core import (
-    EXEMPT_GATES,
-    CircuitState,
-    ShotCallback,
-    ShotInfo,
-)
+from erado import util
+from erado.models import core
 
-from erado.util import (
-    MultiprocessingRNG,
-    NPVector,
-    get_mp_context,
-)
-
-from qiskit import QuantumCircuit
-from qiskit.circuit import (
-    Qubit,
-    CircuitInstruction,
-)
-from qiskit.providers import (
-    BackendV2,
-    JobV1,
-)
+import qiskit
+import qiskit.circuit
+import qiskit.providers
 
 import numpy as np
 
-from concurrent.futures import (
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-    as_completed,
-    wait,
-)
-from collections import Counter
+from concurrent import futures
+import os
+import logging
+import collections
 from collections.abc import (
     Generator,
     Sequence,
 )
-import os
-import logging
 
 
 _logger = logging.getLogger(__name__)
 
 
-class ErasureCircuitSampler(MultiprocessingRNG):
+class ErasureCircuitSampler(util.MultiprocessingRNG):
     """Custom simulation wrapper implementing erasure noise on arbitrary circuits.
 
     This class dynamically samples circuits by deleting gates based on erasure events.
@@ -62,7 +41,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
     """
     def __init__(
             self,
-            circuit: QuantumCircuit,
+            circuit: qiskit.QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
             timeout: float | None = 10.0,
@@ -85,7 +64,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         self._precompute_lut()
 
     @property
-    def circuit(self) -> QuantumCircuit:
+    def circuit(self) -> qiskit.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         return self._circuit
 
@@ -108,14 +87,14 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         """Total number of gates in the circuit."""
         return len(self.circuit.data)
 
-    def erasable_gates(self) -> Generator[tuple[int, CircuitInstruction]]:
+    def erasable_gates(self) -> Generator[tuple[int, qiskit.circuit.CircuitInstruction]]:
         """Iterate through all erasable gates in the circuit.
 
         Yields:
             Tuple of index and instruction for each erasable gate.
         """
         return ((i, g) for i, g in enumerate(self.circuit.data)
-                if g.name not in EXEMPT_GATES)
+                if g.name not in core.EXEMPT_GATES)
 
     @property
     def n_erasable_gates(self) -> int:
@@ -130,13 +109,13 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             for qubit in gate.qubits:
                 start = i if self.erasure_before_gates else i + 1
                 gates_to_remove.extend((j+start for j, g in enumerate(self.circuit.data[start:])
-                                        if qubit in g.qubits and g.name not in EXEMPT_GATES))
+                                        if qubit in g.qubits and g.name not in core.EXEMPT_GATES))
             self._lut[i] = gates_to_remove
 
     def sample(
             self,
-            erasure_events: NPVector[np.int64] | None = None,
-        ) -> tuple[QuantumCircuit, NPVector[np.int64], set[Qubit]]:
+            erasure_events: util.NPVector[np.int64] | None = None,
+        ) -> tuple[qiskit.QuantumCircuit, util.NPVector[np.int64], set[qiskit.circuit.Qubit]]:
         """Sample the circuit, i.e. delete gates based on erasure events.
 
         If erasure events (a Boolean flag for each gate in the circuit) are not provided, they are
@@ -157,9 +136,9 @@ class ErasureCircuitSampler(MultiprocessingRNG):
             raise ValueError("erasure_events must have an entry for every gate in the circuit.")
 
         i_erasures = (i for i, x in enumerate(erasure_events)
-                      if x == 1 and self.circuit.data[i].name not in EXEMPT_GATES)
+                      if x == 1 and self.circuit.data[i].name not in core.EXEMPT_GATES)
 
-        erased_qubits = set[Qubit]()
+        erased_qubits = set[qiskit.circuit.Qubit]()
         gates_to_remove = set[int]()
         for i in i_erasures:
             gate = self.circuit.data[i]
@@ -177,12 +156,12 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def run(
             self,
-            backend: BackendV2,
+            backend: qiskit.providers.BackendV2,
             shots: int,
-            callbacks: Sequence[ShotCallback] = [],
+            callbacks: Sequence[core.ShotCallback] = [],
             multiprocess: bool = False,
             **_,
-        ) -> Counter[CircuitState]:
+        ) -> collections.Counter[core.CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
         As this simulation involves a single shot for each in a sequence of distinct circuits,
@@ -209,10 +188,10 @@ class ErasureCircuitSampler(MultiprocessingRNG):
         """
         if multiprocess:
             # Invoke _run_mp on multiple processes on subsets of the problem
-            counts = Counter[str]()
-            with ProcessPoolExecutor(
+            counts = collections.Counter[str]()
+            with futures.ProcessPoolExecutor(
                     initializer=self._reseed,
-                    mp_context=get_mp_context(),
+                    mp_context=util.get_mp_context(),
                 ) as executor:
                 max_workers = os.process_cpu_count()  # this is the default since Python 3.13
                 shots_each = shots // max_workers
@@ -225,11 +204,11 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                                     (max_workers - 1) * shots_each),
                 )
 
-                for counter in as_completed(counters_futures):
+                for counter in futures.as_completed(counters_futures):
                     counts += counter.result()
 
-            counts = Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
-                        for key, value in counts.items()})
+            counts = collections.Counter({core.CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+                                          for key, value in counts.items()})
         else:
             counts = self._run(backend, shots, callbacks)
 
@@ -240,15 +219,15 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
     def _run(
             self,
-            backend: BackendV2,
+            backend: qiskit.providers.BackendV2,
             shots: int,
-            callbacks: Sequence[ShotCallback],
-        ) -> Counter[CircuitState]:
+            callbacks: Sequence[core.ShotCallback],
+        ) -> collections.Counter[core.CircuitState]:
         samples = [self.sample() for _ in range(shots)]
         circuit_list = [sample[0] for sample in samples]
         erased_qubits_list = [sample[2] for sample in samples]
 
-        job: JobV1 = backend.run(
+        job: qiskit.providers.JobV1 = backend.run(
             circuit_list,
             shots=1,
             seed_simulator=self._rng.integers(2**32),
@@ -267,13 +246,13 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                                    for q in reversed(circuit.qubits)))
                           for erased_qubits, circuit in zip(erased_qubits_list, circuit_list)]
 
-        circuit_states = [CircuitState.from_qiskit_string(erasure_state + qubit_state, circuit.num_qubits)
+        circuit_states = [core.CircuitState.from_qiskit_string(erasure_state + qubit_state, circuit.num_qubits)
                           for erasure_state, qubit_state, circuit in zip(erasure_states, qubit_states, circuit_list)]
 
         if len(callbacks) > 0:
             for i, state in enumerate(circuit_states):
                 for callback in callbacks:
-                    callback(ShotInfo(
+                    callback(core.ShotInfo(
                         self,
                         result,
                         state,
@@ -283,17 +262,17 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                         i,
                     ))
 
-        return Counter(circuit_states)
+        return collections.Counter(circuit_states)
 
     def _run_mp(
             self,
-            backend: BackendV2,
+            backend: qiskit.providers.BackendV2,
             shots: int,
-            callbacks: Sequence[ShotCallback],
+            callbacks: Sequence[core.ShotCallback],
             start: int = 0,
-        ) -> Counter[str]:
+        ) -> collections.Counter[str]:
         # Execute all shots in serial (a bareboned thread pool is used just to allow for timeout)
-        with ThreadPoolExecutor(max_workers=1) as executor:
+        with futures.ThreadPoolExecutor(max_workers=1) as executor:
             def all_shots() -> Generator[str]:
                 for i in range(shots):
                     circuit, _, erased_qubits = self.sample()
@@ -303,7 +282,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                             shots=1,
                             seed_simulator=self._rng.integers(2**32),
                         ).result())  # type: ignore # qiskit.providers.BackendV2 does not correctly annotate run method
-                    _, not_done = wait((future,), timeout=self.timeout)
+                    _, not_done = futures.wait((future,), timeout=self.timeout)
 
                     # If timed out, cleanly throw/kill based on the status of this process
                     if len(not_done) > 0:
@@ -321,10 +300,10 @@ class ErasureCircuitSampler(MultiprocessingRNG):
                     state: str = erasure_state + next(iter(result.get_counts()))
 
                     for callback in callbacks:
-                        callback(ShotInfo(
+                        callback(core.ShotInfo(
                             self,
                             result,
-                            CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                            core.CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                             i,
                             start,
                             0,
@@ -333,7 +312,7 @@ class ErasureCircuitSampler(MultiprocessingRNG):
 
                     yield state
 
-            counts = Counter(all_shots())
+            counts = collections.Counter(all_shots())
 
         return counts
 

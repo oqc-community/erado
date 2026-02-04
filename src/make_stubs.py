@@ -27,16 +27,16 @@ honest with the source material.
 import inspect
 import re
 import argparse
-from importlib import import_module
-from io import TextIOWrapper
-from pathlib import Path
-from types import ModuleType
+import importlib
+import io
+import pathlib
+import types
 
 
 class FileWriter:
     INDENT_SPACES = 4
 
-    def __init__(self, out: TextIOWrapper):
+    def __init__(self, out: io.TextIOWrapper):
         self.out = out
         self._level = 0
 
@@ -100,9 +100,9 @@ EXEMPT_MEMBERS: list[str] = [
 
 
 def make_stub_file(
-        package: ModuleType,
-        module: ModuleType,
-        output_file: Path,
+        package: types.ModuleType,
+        module: types.ModuleType,
+        output_file: pathlib.Path,
         debug: bool = False,
         mock_iter: bool = True
     ) -> None:
@@ -199,12 +199,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    module = import_module(args.module)
+    module = importlib.import_module(args.module)
 
-    root_dir = Path(args.output)
+    root_dir = pathlib.Path(args.output)
     module_tree = str(args.module).split(".")
 
-    package = import_module(module_tree[0])
+    package = importlib.import_module(module_tree[0])
 
     output_file = root_dir
     for name in module_tree[:-1]:

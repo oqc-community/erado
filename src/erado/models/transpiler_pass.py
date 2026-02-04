@@ -1,40 +1,25 @@
 """Defines the transpiler-pass simulation model."""
 
-from erado.models.core import (
-    EXEMPT_GATES,
-    SNAPSHOT_GATES,
-    CircuitState,
-    ShotCallback,
-    ShotInfo,
-)
+from erado.models import core
 
-from qiskit import QuantumCircuit
-from qiskit.circuit import (
-    QuantumRegister,
-    ClassicalRegister,
-    IfElseOp,
-    Measure,
-    Reset,
-)
-from qiskit.transpiler import PassManager
-from qiskit.transpiler.basepasses import TransformationPass
-from qiskit.dagcircuit import DAGCircuit
-from qiskit.providers import BackendV2
+import qiskit
+import qiskit.circuit as qkc
+import qiskit.transpiler
+import qiskit.transpiler.basepasses
+import qiskit.dagcircuit
+import qiskit.providers
 
-from qiskit_aer import AerSimulator
-from qiskit_aer.noise import (
-    NoiseModel,
-    pauli_error,
-)
+import qiskit_aer
+import qiskit_aer.noise
 
-from itertools import chain
-from typing import override
-from copy import deepcopy
-from collections import Counter
+import itertools
+import copy
+import collections
 from collections.abc import Sequence
+from typing import override
 
 
-class ErasurePass(TransformationPass):
+class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
     """Transpiler pass implementing erasable qubits.
 
     This bakes conditional gates into arbitrary quantum circuits representing qubit erasure logic.
@@ -85,57 +70,58 @@ class ErasurePass(TransformationPass):
         return self._n_erasable_gates
 
     @override
-    def run(self, dag: DAGCircuit) -> DAGCircuit:
+    def run(self, dag: qiskit.dagcircuit.DAGCircuit) -> qiskit.dagcircuit.DAGCircuit:
         # Collect all erasable quantum operations
         gates = [node for node in dag.op_nodes()
-                 if node.name not in EXEMPT_GATES]
+                 if node.name not in core.EXEMPT_GATES]
         self._n_erasable_gates = len(gates)
 
         # Add new classical register of qubit erasure flags
-        erasure_creg = ClassicalRegister(dag.num_qubits(), ErasurePass.ERASURE_CREG_NAME)
+        erasure_creg = qkc.ClassicalRegister(dag.num_qubits(), ErasurePass.ERASURE_CREG_NAME)
         dag.add_creg(erasure_creg)
 
         # Add a single qubit used to populate erasure events
-        erasure_qreg = QuantumRegister(1, ErasurePass.ERASER_QREG_NAME)
+        erasure_qreg = qkc.QuantumRegister(1, ErasurePass.ERASER_QREG_NAME)
         dag.add_qreg(erasure_qreg)
 
         for node in gates:
             # Create a new QuantumCircuit directly containing the original gate
-            gate_circuit = QuantumCircuit(QuantumRegister(bits=node.qargs), ClassicalRegister(bits=node.cargs))
+            gate_circuit = qiskit.QuantumCircuit(qkc.QuantumRegister(bits=node.qargs),
+                                                 qkc.ClassicalRegister(bits=node.cargs))
             gate_circuit.append(node.op, node.qargs, node.cargs)
 
             # Create a new QuantumCircuit implementing a noise-controlled erasure event
             erasure_cargs = [erasure_creg[dag.find_bit(qarg)[0]] for qarg in node.qargs]
-            eraser_circuit = QuantumCircuit(erasure_qreg, ClassicalRegister(bits=erasure_cargs))
+            eraser_circuit = qiskit.QuantumCircuit(erasure_qreg, qkc.ClassicalRegister(bits=erasure_cargs))
             for carg in erasure_cargs:
                 # This 0 state is flipped pre-measurement by the noise channel
-                eraser_circuit.append(Measure(), [erasure_qreg], [carg])
-                eraser_circuit.append(Reset(), [erasure_qreg])
+                eraser_circuit.append(qkc.Measure(), [erasure_qreg], [carg])
+                eraser_circuit.append(qkc.Reset(), [erasure_qreg])
 
             # Instantiate mini-DAG and attach mini-registers
-            mini_dag = DAGCircuit()
+            mini_dag = qiskit.dagcircuit.DAGCircuit()
             n_qargs = len(node.qargs)
 
-            mini_qreg = QuantumRegister(n_qargs, "mini_q")
+            mini_qreg = qkc.QuantumRegister(n_qargs, "mini_q")
             mini_dag.add_qreg(mini_qreg)
 
-            mini_creg = ClassicalRegister(n_qargs, "mini_c")
+            mini_creg = qkc.ClassicalRegister(n_qargs, "mini_c")
             mini_dag.add_creg(mini_creg)
 
             mini_dag.add_qreg(erasure_qreg)
 
             # Populate mini-DAG with gate+erasure circuits, conditional on the relevant erasure flags
             if self.erasure_before_gates:
-                conditional_eraser = IfElseOp((mini_creg, 0), eraser_circuit)
-                conditional_gate = IfElseOp((mini_creg, 0), gate_circuit)
+                conditional_eraser = qkc.IfElseOp((mini_creg, 0), eraser_circuit)
+                conditional_gate = qkc.IfElseOp((mini_creg, 0), gate_circuit)
                 mini_dag.apply_operation_back(conditional_eraser, erasure_qreg, mini_creg)
                 mini_dag.apply_operation_back(conditional_gate, mini_qreg, mini_creg)
             else:
                 combined_circuit = gate_circuit.tensor(eraser_circuit)
                 if combined_circuit is None:
                     raise RuntimeError("Circuits could not be combined (possibly in-place tensor).")
-                conditional = IfElseOp((mini_creg, 0), combined_circuit)
-                mini_dag.apply_operation_back(conditional, chain(erasure_qreg, mini_qreg), mini_creg)
+                conditional = qkc.IfElseOp((mini_creg, 0), combined_circuit)
+                mini_dag.apply_operation_back(conditional, itertools.chain(erasure_qreg, mini_qreg), mini_creg)
 
             # Explicitly map mini-DAG wires to global wires
             wires = {mini_qreg[i]: node.qargs[i] for i in range(n_qargs)}
@@ -150,7 +136,10 @@ class ErasurePass(TransformationPass):
         return dag
 
 
-def get_qubit_by_name(qc: QuantumCircuit, name: str) -> int:
+def get_qubit_by_name(
+        qc: qiskit.QuantumCircuit,
+        name: str,
+    ) -> int:
     """Return the index of the sole/first qubit in a qreg of a given name.
 
     Args:
@@ -170,7 +159,11 @@ def get_qubit_by_name(qc: QuantumCircuit, name: str) -> int:
     raise ValueError("Could not find a qreg with the requested name.")
 
 
-def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate: float) -> None:
+def add_erasure_noise(
+        noise_model: qiskit_aer.noise.NoiseModel,
+        qc: qiskit.QuantumCircuit,
+        erasure_rate: float,
+    ) -> None:
     """Add an erasure noise model to an `ErasurePass` circuit.
 
     This model populates erasure events via Pauli noise on the `ErasurePass.ERASER_QREG_NAME` ancilla.
@@ -186,7 +179,7 @@ def add_erasure_noise(noise_model: NoiseModel, qc: QuantumCircuit, erasure_rate:
         qc: Qiskit circuit (must have had `ErasurePass` applied).
         erasure_rate: Uniform erasure rate.
     """
-    error = pauli_error([("X", erasure_rate), ("I", 1 - erasure_rate)])
+    error = qiskit_aer.noise.pauli_error([("X", erasure_rate), ("I", 1 - erasure_rate)])
     noise_model.add_quantum_error(error, "measure", [get_qubit_by_name(qc, ErasurePass.ERASER_QREG_NAME)])
 
 
@@ -197,7 +190,7 @@ class ErasurePassJob:
     """
     def __init__(
             self,
-            circuit: QuantumCircuit,
+            circuit: qiskit.QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
         ):
@@ -213,12 +206,12 @@ class ErasurePassJob:
         self._erasure_before_gates = erasure_before_gates
 
         ep = ErasurePass(erasure_before_gates=erasure_before_gates)
-        pm = PassManager([ep])
+        pm = qiskit.transpiler.PassManager([ep])
         self._circuit_erasure = pm.run(circuit)
 
         # Ensure that snapshot gates correctly apply to all qubits despite new ERASER_QREG
         for i, gate in enumerate(self._circuit_erasure.data):
-            if gate.name in SNAPSHOT_GATES:
+            if gate.name in core.SNAPSHOT_GATES:
                 gate.operation.num_qubits = self._circuit_erasure.num_qubits
 
                 # Ensure the new instruction is correct by appending it, then move it to overwrite
@@ -233,12 +226,12 @@ class ErasurePassJob:
         self._n_erasable_gates = ep.n_erasable_gates
 
     @property
-    def circuit(self) -> QuantumCircuit:
+    def circuit(self) -> qiskit.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         return self._circuit
 
     @property
-    def circuit_erasure(self) -> QuantumCircuit:
+    def circuit_erasure(self) -> qiskit.QuantumCircuit:
         """Copy of circuit with `ErasurePass` applied."""
         return self._circuit_erasure
 
@@ -259,11 +252,11 @@ class ErasurePassJob:
 
     def run(
             self,
-            backend: BackendV2,
+            backend: qiskit.providers.BackendV2,
             shots: int,
-            callbacks: Sequence[ShotCallback] = [],
+            callbacks: Sequence[core.ShotCallback] = [],
             **_,
-        ) -> Counter[CircuitState]:
+        ) -> collections.Counter[core.CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
         This method temporarily replaces the backend's noise model with a copy with
@@ -284,11 +277,11 @@ class ErasurePassJob:
         Returns:
             A map of each `CircuitState` to the number of times it was observed.
         """
-        if type(backend) is not AerSimulator:
+        if type(backend) is not qiskit_aer.AerSimulator:
             raise TypeError("Only AerSimulator is supported for ErasurePassJob.")
 
         nm_old = getattr(backend.options, "noise_model", None)
-        nm_new = NoiseModel() if nm_old is None else deepcopy(nm_old)
+        nm_new = qiskit_aer.noise.NoiseModel() if nm_old is None else copy.deepcopy(nm_old)
         add_erasure_noise(nm_new, self.circuit_erasure, self.erasure_rate)
         setattr(backend.options, "noise_model", nm_new)
 
@@ -303,10 +296,10 @@ class ErasurePassJob:
 
             for i, state in enumerate(memory):
                 for callback in callbacks:
-                    callback(ShotInfo(
+                    callback(core.ShotInfo(
                         self,
                         result,
-                        CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                        core.CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                         i,
                         0,
                         i,
@@ -318,8 +311,8 @@ class ErasurePassJob:
 
         counts = result.get_counts()
 
-        return Counter({CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
-                        for key, value in counts.items()})
+        return collections.Counter({core.CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+                                    for key, value in counts.items()})
 
 
 __all__ = [

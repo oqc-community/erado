@@ -11,9 +11,9 @@ import qiskit.providers
 import pydantic
 import numpy as np
 
-from collections import Counter
-from multiprocessing.managers import SharedMemoryManager
+import collections
 import contextlib
+from multiprocessing import managers
 
 
 class ErasureSimResults(pydantic.BaseModel):
@@ -24,7 +24,7 @@ class ErasureSimResults(pydantic.BaseModel):
     rejection_rate: float
     circuit_depth: int
     n_erasable_gates: int
-    counts: Counter[models.CircuitState]
+    counts: collections.Counter[models.CircuitState]
     fidelity: util.NPPydantic[util.NPVector[np.float64]]
 
     model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
@@ -113,7 +113,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
             shots: int,
             fidelity_functor: fidelity.FidelityFunctor | None,
             model_kwargs: dict[str, object],
-        ) -> Counter[models.CircuitState]:
+        ) -> collections.Counter[models.CircuitState]:
         callbacks: list[models.ShotCallback] = []
         if fidelity_functor is not None:
             callbacks.append(fidelity_functor)
@@ -124,7 +124,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
             if fidelity_functor is not None:
                 # If using FidelityFunctor, use it as the source of truth for all observed states.
                 # Also, we must send the noise-inflicted states back into the generator.
-                counts = Counter[models.CircuitState]()
+                counts = collections.Counter[models.CircuitState]()
                 results = fidelity_functor.results()
                 for _, state in results:
                     noisy_state = self._add_check_noise(state)
@@ -132,11 +132,11 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
                     results.send(noisy_state)
 
             else:
-                counts = Counter((self._add_check_noise(elt) for elt in counts.elements()))
+                counts = collections.Counter((self._add_check_noise(elt) for elt in counts.elements()))
 
         return counts
 
-    def _count_rejected(self, counts: Counter[models.CircuitState]) -> int:
+    def _count_rejected(self, counts: collections.Counter[models.CircuitState]) -> int:
         return sum((count
                     for state, count in counts.items()
                     if state.erasure != "0"*self.n_qubits))
@@ -178,7 +178,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
         """
         # multiprocessing defaults to False, so only inject SharedMemoryManager if explicitly enabled by a kwarg
         multiprocess = kwarg if isinstance(kwarg := kwargs.get("multiprocess"), bool) else False
-        with (SharedMemoryManager(ctx=util.get_mp_context())
+        with (managers.SharedMemoryManager(ctx=util.get_mp_context())
               if multiprocess
               else contextlib.nullcontext()) as smm:
             # A new FidelityFunctor is needed for each postselection round
