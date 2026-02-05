@@ -108,7 +108,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
             gates_to_remove = []
             for qubit in gate.qubits:
                 start = i if self.erasure_before_gates else i + 1
-                gates_to_remove.extend((j+start for j, g in enumerate(self.circuit.data[start:])
+                gates_to_remove.extend((j + start for j, g in enumerate(self.circuit.data[start:])
                                         if qubit in g.qubits and g.name not in core.EXEMPT_GATES))
             self._lut[i] = gates_to_remove
 
