@@ -7,6 +7,7 @@ authors = [
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
+urls = { source = "https://github.com/oqc-community/erado" }
 dynamic = ["version"]
 requires-python = ">=3.13"
 dependencies = [
