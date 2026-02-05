@@ -41,20 +41,17 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
     def __init__(
             self,
             model: models.ErasureModel,
-            noisy_checks: bool = False,
-            false_positive_rate: float = 0,
-            false_negative_rate: float = 0,
+            false_positive_rate: float = 0.0,
+            false_negative_rate: float = 0.0,
         ):
         """Construct an `ErasureSimFrontend`.
 
         Args:
             model: Configured `ErasureModel` to use for simulation.
-            noisy_checks: If true, EOL erasure checks are subject to noise.
             false_positive_rate: Probability that negative erasure checks are flipped.
             false_negative_rate: Probability that positive erasure checks are flipped.
         """
         self._model = model
-        self._noisy_checks = noisy_checks
         self._false_positive_rate = false_positive_rate
         self._false_negative_rate = false_negative_rate
 
@@ -62,11 +59,6 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
     def model(self) -> models.ErasureModel:
         """`ErasureModel` used to construct this `ErasureSimFrontend`."""
         return self._model
-
-    @property
-    def noisy_checks(self) -> bool:
-        """If true, EOL erasure checks are subject to noise."""
-        return self._noisy_checks
 
     @property
     def false_positive_rate(self) -> float:
@@ -77,6 +69,11 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
     def false_negative_rate(self) -> float:
         """Probability that positive erasure checks are flipped."""
         return self._false_negative_rate
+
+    @property
+    def noisy_checks(self) -> bool:
+        """If true, EOL erasure checks are subject to nonzero noise."""
+        return self.false_positive_rate != 0.0 or self.false_negative_rate != 0.0
 
     @property
     def n_qubits(self) -> int:

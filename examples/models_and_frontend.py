@@ -125,7 +125,6 @@ def example_ErasureSimFrontend():
     # model = ErasurePassJob(circuit=circuit,
     #                        erasure_rate=erasure_rate)
     frontend = ErasureSimFrontend(model=model,
-                                  noisy_checks=True,
                                   false_positive_rate=false_positive_rate,
                                   false_negative_rate=false_negative_rate)
     ErasureSimFrontend.seed(seed)
