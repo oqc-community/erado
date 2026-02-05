@@ -11,10 +11,6 @@ Latin verb; *third conjugation*
 2. to abolish, eradicate, remove
 3. to ***erase***, delete
 
-## Dependencies
-
-GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
-
 ## Installation
 
 ### Published package
@@ -26,6 +22,9 @@ pip install erado -i https://pypi.int.oqc.app/simple
 ```
 
 or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using uv/Poetry).
+
+> [!NOTE]
+> GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
 
 ### From source (uv)
 
@@ -52,3 +51,5 @@ The [`poe`](https://poethepoet.natn.io/index.html) command can also be used to r
 ```shell
 uv run poe checks
 ```
+
+This codebase broadly follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), with some variations. Specific rule definitions can be found in [pyproject.toml](./pyproject.toml).
