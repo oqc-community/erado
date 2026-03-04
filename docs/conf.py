@@ -16,6 +16,8 @@ author = "Sam J. Griffiths"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
     "autoapi.extension",
     "myst_parser",
 ]
@@ -28,6 +30,8 @@ exclude_patterns = [
     "Thumbs.db",
     ".DS_Store",
 ]
+
+autodoc_typehints = "both"
 
 
 # -- Options for HTML output -------------------------------------------------
