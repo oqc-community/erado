@@ -11,5 +11,6 @@
    :maxdepth: 2
 
    self
+   autoapi/index
    license
    genindex
