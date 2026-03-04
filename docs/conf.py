@@ -47,4 +47,13 @@ autoapi_dirs = [
     "../src/erado",
 ]
 
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
+    "imported-members",
+]
+
 # TODO: Add cross-referencing tags to all docstrings.
