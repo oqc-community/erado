@@ -28,6 +28,10 @@ dev = [
     "pytest>=8.4.2",
     "ruff>=0.14.0",
 ]
+docs = [
+    "sphinx>=9.1.0",
+    "sphinx-autobuild>=2025.8.25",
+]
 
 
 [build-system]
@@ -48,6 +52,8 @@ pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
+docs-build = "sphinx-build -M html docs docs/_build"
+docs-preview = "sphinx-autobuild docs docs/_build"
 
 [tool.poe.tasks.checks]
 sequence = [
