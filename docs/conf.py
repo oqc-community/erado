@@ -17,6 +17,7 @@ author = "Sam J. Griffiths"
 
 extensions = [
     "autoapi.extension",
+    "myst_parser",
 ]
 
 templates_path = [

@@ -4,7 +4,7 @@ description = "Simulation suite for error mitigation via dimon erasure models."
 authors = [
     { name = "Sam Griffiths", email = "sgriffiths@oqc.tech" },
 ]
-readme = "README.md"
+readme = "docs/README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 urls = { source = "https://github.com/oqc-community/erado" }
@@ -30,6 +30,7 @@ dev = [
 ]
 docs = [
     "furo>=2025.12.19",
+    "myst-parser>=5.0.0",
     "sphinx>=9.1.0",
     "sphinx-autoapi>=3.7.0",
 ]

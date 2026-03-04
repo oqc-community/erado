@@ -52,4 +52,4 @@ The [`poe`](https://poethepoet.natn.io/index.html) command can also be used to r
 uv run poe checks
 ```
 
-This codebase broadly follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), with some variations. Specific rule definitions can be found in [pyproject.toml](./pyproject.toml).
+This codebase broadly follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), with some variations. Specific rule definitions can be found in [pyproject.toml](../pyproject.toml).
