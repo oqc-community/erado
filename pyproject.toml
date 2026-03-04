@@ -53,7 +53,7 @@ pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
-docs = "sphinx-build -M html docs docs/_build"
+docs = { shell = "rm -rf docs/_build && sphinx-build -M html docs docs/_build" }
 
 [tool.poe.tasks.checks]
 sequence = [
