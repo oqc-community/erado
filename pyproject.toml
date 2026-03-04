@@ -30,7 +30,7 @@ dev = [
 ]
 docs = [
     "sphinx>=9.1.0",
-    "sphinx-autobuild>=2025.8.25",
+    "sphinx-autoapi>=3.7.0",
 ]
 
 
@@ -52,8 +52,7 @@ pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
-docs-build = "sphinx-build -M html docs docs/_build"
-docs-preview = "sphinx-autobuild docs docs/_build"
+docs = "sphinx-build -M html docs docs/_build"
 
 [tool.poe.tasks.checks]
 sequence = [

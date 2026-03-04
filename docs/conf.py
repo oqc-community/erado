@@ -15,7 +15,9 @@ author = "Sam J. Griffiths"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = [
+    "autoapi.extension",
+]
 
 templates_path = [
     "_templates",
@@ -34,3 +36,13 @@ html_theme = "alabaster"
 html_static_path = [
     "_static",
 ]
+
+
+# -- Options for AutoAPI -------------------------------------------------
+# https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
+
+autoapi_dirs = [
+    "../src/erado",
+]
+
+# TODO: Add cross-referencing tags to all docstrings.
