@@ -32,12 +32,12 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
     The main benefit of this method is that strictly no overhead is introduced on circuits.
     The main drawback of this method is that circuits are individually sampled and simulated.
 
-    Note that the `seed` method (provided via `MultiprocessingRNG`) correctly affects/overrides
-    the seed behaviour of the backend provided to `run`.
+    Note that the :meth:`seed` method (provided via :class:`~erado.util.MultiprocessingRNG`) correctly affects/overrides
+    the seed behaviour of the backend provided to :meth:`run`.
 
-    Fulfills the `ErasureModel` protocol.
+    Fulfills the :class:`ErasureModel` protocol.
 
-    See `example_ErasureCircuitSampler` for example usage.
+    See ``example_ErasureCircuitSampler`` for example usage.
     """
     def __init__(
             self,
@@ -98,7 +98,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
 
     @property
     def n_erasable_gates(self) -> int:
-        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
+        """Number of erasable gates (i.e. not in :attr:`EXEMPT_GATES`) in the circuit."""
         return len(list(self.erasable_gates()))
 
     def _precompute_lut(self) -> None:
@@ -119,13 +119,13 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
         """Sample the circuit, i.e. delete gates based on erasure events.
 
         If erasure events (a Boolean flag for each gate in the circuit) are not provided, they are
-        sampled as a Bernoulli distribution from the specified `erasure_rate`.
+        sampled as a Bernoulli distribution from the specified :attr:`erasure_rate`.
 
         Args:
             erasure_events: Binary vector dictating if an erasure occurred on each gate.
 
         Raises:
-            ValueError: If the length of `erasure_events` does not equal `self.n_gates()`.
+            ValueError: If the length of ``erasure_events`` does not equal :func:`n_gates`.
 
         Returns:
             Tuple of the sampled circuit, erasure events and set of erased qubits.
@@ -166,13 +166,13 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
 
         As this simulation involves a single shot for each in a sequence of distinct circuits,
         multiprocessing may be used to potentially achieve notable speedup. This can be enabled
-        with the `multiprocess` parameter. However, it may often still be faster to allow Qiskit
+        with the ``multiprocess`` parameter. However, it may often still be faster to allow Qiskit
         to batch-process the sequence of circuits itself, so it is disabled by default.
 
         When using multiprocessing, if any single shot within a child process takes longer than the
-        `timeout` property (default: 10 seconds) to complete, the child will kill itself. This will
-        manifest as either a `TimeoutError` or `BrokenProcessPool` exception. To disable this
-        timeout completely, set `timeout` to None.
+        :attr:`timeout` property (default: 10 seconds) to complete, the child will kill itself. This will
+        manifest as either a :class:`TimeoutError` or :class:`BrokenProcessPool` exception. To disable this
+        timeout completely, set :attr:`timeout` to None.
 
         Args:
             backend: Circuit simulator backend.
@@ -181,10 +181,10 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
             multiprocess: If true, parallelise the workload over multiple processes.
 
         Raises:
-            RuntimeError: If the resultant number of shots does not equal the `shots` argument.
+            RuntimeError: If the resultant number of shots does not equal the ``shots`` argument.
 
         Returns:
-            A map of each `CircuitState` to the number of times it was observed.
+            A map of each :class:`CircuitState` to the number of times it was observed.
         """
         if multiprocess:
             # Invoke _run_mp on multiple processes on subsets of the problem

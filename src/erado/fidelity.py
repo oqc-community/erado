@@ -19,7 +19,7 @@ def calculate_statevector(circuit: qiskit.QuantumCircuit) -> quantum_info.Statev
     """Get the statevector representing the final state of a quantum circuit.
 
     Any final measurements and snapshot gates are removed for the purposes of calculating the final
-    statevector (this does _not_ modify the provided circuit in-place).
+    statevector (this does *not* modify the provided circuit in-place).
 
     Args:
         circuit: Quantum circuit.
@@ -35,7 +35,7 @@ def calculate_statevector(circuit: qiskit.QuantumCircuit) -> quantum_info.Statev
     if circuit_pure is None:
         raise RuntimeError("Qiskit's remove_final_measurements did not return a circuit as requested.")
 
-    # Also remove any snapshot calls (else constructing the `Statevector` will fail)
+    # Also remove any snapshot calls (else constructing the Statevector will fail)
     for i in reversed(range(len(circuit_pure.data))):
         if circuit_pure.data[i].operation.name in models.SNAPSHOT_GATES:
             del circuit_pure.data[i]
@@ -44,15 +44,15 @@ def calculate_statevector(circuit: qiskit.QuantumCircuit) -> quantum_info.Statev
 
 
 STATE_LABEL = "final_state"
-"""Default key for snapshot gate data expected by `FidelityFunctor`."""
+"""Default key for snapshot gate data expected by :class:`FidelityFunctor`."""
 
 
 class FidelityFunctor:
-    """Function object implementing `ShotCallback` to gather per-shot fidelity data.
+    """Function object implementing :type:`erado.models.ShotCallback` to gather per-shot fidelity data.
 
-    If provided as a `ShotCallback`, this function object calculates and stores the fidelity
+    If provided as a :type:`~erado.models.ShotCallback`, this function object calculates and stores the fidelity
     (along with the associated state) of each shot. These can then be accessed (and mutated) by the
-    `results` generator method.
+    :meth:`results` generator method.
     """
     def __init__(
             self,
@@ -60,25 +60,26 @@ class FidelityFunctor:
             circuit: qiskit.QuantumCircuit | None = None,
             smm: managers.SharedMemoryManager | None = None,
         ):
-        """Construct a new `FidelityFunctor`.
+        """Construct a new :class:`FidelityFunctor`.
 
         The number of shots must be provided in order to preallocate the correct amount of memory
         to store the results.
 
-        If a `SharedMemoryManager` dependency is injected, the results are stored in shared memory
+        If a :class:`SharedMemoryManager` dependency is injected, the results are stored in shared memory
         such that this functor is compatible with multiprocessing-enabled simulations.
 
         If possible, the quantum circuit should be provided, so that
-        1) the circuit's ideal statevector is calculated once and cached, and
-        2) it is guaranteed that no more or less shared memory than necessary is allocated for
-            `CircuitState` representation.
+
+        1. the circuit's ideal statevector is calculated once and cached, and
+        2. it is guaranteed that no more or less shared memory than necessary is allocated for
+        :class:`erado.models.CircuitState` representation.
 
         If a circuit is not provided, the fallback default allocation supports up to 64 qubits.
 
         Args:
             shots: Number of shots to be executed.
             circuit: Circuit to be used in simulation.
-            smm: `SharedMemoryManager` instance to enable multiprocessing support.
+            smm: :class:`SharedMemoryManager` instance to enable multiprocessing support.
         """
         n_qubits = circuit.num_qubits if circuit is not None else 64
 
@@ -92,7 +93,7 @@ class FidelityFunctor:
         self._circuit_sv = calculate_statevector(circuit) if circuit is not None else None
 
     def __call__(self, info: models.ShotInfo) -> None:
-        """Implement `ShotCallback`.
+        """Implement :type:`erado.models.ShotCallback`.
 
         Args:
             info: Shot information.
@@ -126,13 +127,13 @@ class FidelityFunctor:
     def results(self) -> Generator[tuple[float, models.CircuitState], models.CircuitState, None]:
         """Iterate through all stored results.
 
-        Optionally supports `CircuitState` as a `SendType` in order to mutate the
+        Optionally supports :class:`erado.models.CircuitState` as a ``SendType`` in order to mutate the
         previously-yielded state, e.g. to inflict erasure check noise. If a value is sent, the next
         value yielded will be a repeat of the sent value, such that this generator can be used
         elegantly in a for-loop regardless of whether new values are sent in the loop body.
 
         Yields:
-            Tuple of fidelity and `CircuitState` corresponding to each shot.
+            Tuple of fidelity and :class:`~erado.models.CircuitState` corresponding to each shot.
         """
         for i in range(len(self._fidelities)):
             new_state = yield self._fidelities[i], models.CircuitState.from_string(self._states[i])

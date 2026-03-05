@@ -24,7 +24,7 @@ def ghz(n: int) -> qiskit.QuantumCircuit:
 def qft_full(n: int) -> qiskit.QuantumCircuit:
     """Quantum Fourier transform (QFT) on all-to-all connectivity.
 
-    This directly invokes `qiskit.synthesis.synth_qft_full`.
+    This directly invokes :func:`qiskit.synthesis.synth_qft_full`.
 
     Args:
         n: Number of qubits.
@@ -38,7 +38,7 @@ def qft_full(n: int) -> qiskit.QuantumCircuit:
 def qft_linear(n: int) -> qiskit.QuantumCircuit:
     """Quantum Fourier transform (QFT) on linear connectivity.
 
-    This directly invokes `qiskit.synthesis.synth_qft_line`, which uses a construction based on
+    This directly invokes :func:`qiskit.synthesis.synth_qft_line`, which uses a construction based on
     Fowler et al. 2014 (https://arxiv.org/abs/quant-ph/0402196).
 
     Args:

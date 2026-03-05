@@ -23,8 +23,8 @@ class CircuitState(pydantic.BaseModel):
     """Data structure representing the observed state of a quantum circuit.
 
     This is equivalent to a tuple of the state of erasure checks on all qubits in the circuit (the
-    `erasure` field) and the computational state of measured qubits in the same format as is
-    returned by Qiskit backends (the `measure` field).
+    :attr:`erasure` field) and the computational state of measured qubits in the same format as is
+    returned by Qiskit backends (the :attr:`measure` field).
     """
     erasure: str
     measure: str
@@ -33,7 +33,7 @@ class CircuitState(pydantic.BaseModel):
 
     @classmethod
     def from_qiskit_string(cls, state: str, n_qubits: int) -> Self:
-        """Construct a `CircuitState` from a binary string representation.
+        """Construct a :class:`CircuitState` from a binary string representation.
 
         The string is expected to be in the format yielded by a Qiskit simulation backend. For a
         circuit with n qubits, the string is expected to start with n qubit erasure states,
@@ -44,7 +44,7 @@ class CircuitState(pydantic.BaseModel):
             n_qubits: Number of qubits (i.e. number of erasure checks).
 
         Returns:
-            New `CircuitState` instance.
+            New :class:`CircuitState` instance.
         """
         state = state.replace(" ", "")
         erasure = state[:n_qubits]
@@ -53,25 +53,25 @@ class CircuitState(pydantic.BaseModel):
 
     @classmethod
     def from_string(cls, state: str) -> Self:
-        """Construct a `CircuitState` from a binary string representation.
+        """Construct a :class:`CircuitState` from a binary string representation.
 
-        The string is expected to be in the format yielded by `__str__`.
+        The string is expected to be in the format yielded by :meth:`__str__`.
 
         Args:
             state: Binary string representing state.
 
         Returns:
-            New `CircuitState` instance.
+            New :class:`CircuitState` instance.
         """
         erasure, measure = state.split(",", 1)
         return cls(erasure=erasure, measure=measure)
 
     @override
     def __str__(self) -> str:
-        """Serialise this `CircuitState` into a suitable string format.
+        """Serialise this :class:`CircuitState` into a suitable string format.
 
         This is designed to be more readable and compact for JSON files containing a large
-        dictionary of these states (as opposed to Pydantic's default found in `__repr__`).
+        dictionary of these states (as opposed to Pydantic's default found in :meth:`__repr__`).
 
         Examples:
             >>> print(CircuitState(erasure="000", measure="11"))
@@ -87,7 +87,7 @@ class CircuitState(pydantic.BaseModel):
     @pydantic.model_validator(mode="wrap")
     @classmethod
     def deserialise(cls, value: object, handler: pydantic.ModelWrapValidatorHandler[Self]) -> Self:
-        """Deserialise a `CircuitState` from a JSON-suitable string.
+        """Deserialise a :class:`CircuitState` from a JSON-suitable string.
 
         Args:
             value: Serialised data.
@@ -97,7 +97,7 @@ class CircuitState(pydantic.BaseModel):
             ValidationError: If the input could not be deserialised.
 
         Returns:
-            New `CircuitState` instance.
+            New :class:`CircuitState` instance.
         """
         if isinstance(value, str):
             try:
@@ -111,7 +111,7 @@ def postselect_counts(counts: collections.Counter[CircuitState]) -> collections.
     """Filter a state counter to only non-erased states.
 
     Args:
-        counts: `CircuitState` counter.
+        counts: :class:`CircuitState` counter.
 
     Returns:
         Counter of non-erased measurement states.
@@ -130,7 +130,7 @@ type ShotCallback = Callable[[ShotInfo], None]
 class ErasureModel(Protocol):
     """Protocol representing an erasure circuit simulation model.
 
-    Any class fulfilling this protocol may be used with `frontend.ErasureSimFrontend`.
+    Any class fulfilling this protocol may be used with :class:`erado.frontend.ErasureSimFrontend`.
     """
     @property
     def circuit(self) -> qiskit.QuantumCircuit:
@@ -139,7 +139,7 @@ class ErasureModel(Protocol):
 
     @property
     def n_erasable_gates(self) -> int:
-        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
+        """Number of erasable gates (i.e. not in :attr:`EXEMPT_GATES`) in the circuit."""
         ...
 
     def __init__(self, circuit: qiskit.QuantumCircuit, erasure_rate: float):
@@ -155,15 +155,16 @@ class ErasureModel(Protocol):
         ) -> collections.Counter[CircuitState]:
         """Execute an erasure simulation using this model.
 
+        (This signature enforces ``**_`` to make sure all models can ignore unused kwargs.)
+
         Args:
             backend: Circuit simulator backend.
             shots: Number of shots.
             callbacks: Collection of per-shot callback functions.
 
         Returns:
-            A map of each `CircuitState` to the number of times it was observed.
+            A map of each :class:`CircuitState` to the number of times it was observed.
         """
-        # NOTE: This signature enforces **_ to make sure all models can ignore unused kwargs.
         ...
 
 
@@ -173,10 +174,14 @@ class ShotInfo:
     model: ErasureModel
     result: qiskit.result.Result
     state: CircuitState
-    i: int             # Shot number within this process
-    start: int         # Initial global index of this process
-    i_shot: int        # Shot number within the qiskit result shots
-    i_experiment: int  # Shot number within the qiskit result experiments
+    i: int
+    """Shot number within this process."""
+    start: int
+    """Initial global index of this process."""
+    i_shot: int
+    """Shot number within the Qiskit result shots."""
+    i_experiment: int
+    """Shot number within the Qiskit result experiments."""
 
 
 SNAPSHOT_GATES = [

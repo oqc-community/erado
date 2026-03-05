@@ -61,4 +61,6 @@ autoapi_options = [
     "imported-members",
 ]
 
+autoapi_python_class_content = "both"
+
 # TODO: Add cross-referencing tags to all docstrings.

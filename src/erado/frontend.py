@@ -17,7 +17,7 @@ from multiprocessing import managers
 
 
 class ErasureSimResults(pydantic.BaseModel):
-    """Data structure of the results from an `ErasureSimFrontend` run."""
+    """Data structure of the results from an :class:`ErasureSimFrontend` run."""
     shots: int
     n_accepted: int
     n_rejected: int
@@ -31,12 +31,12 @@ class ErasureSimResults(pydantic.BaseModel):
 
 
 class ErasureSimFrontend(util.MultiprocessingRNG):
-    """Erasure simulation frontend supporting any `ErasureModel`.
+    """Erasure simulation frontend supporting any :class:`erado.models.ErasureModel`.
 
     This utility adds logic for postselection on end-of-line (EOL) erasure checks, as well as noise
     on these checks in the form of false positive/negative rates.
 
-    See `example_ErasureSimFrontend` for example usage.
+    See ``example_ErasureSimFrontend`` for example usage.
     """
     def __init__(
             self,
@@ -44,10 +44,10 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
             false_positive_rate: float = 0.0,
             false_negative_rate: float = 0.0,
         ):
-        """Construct an `ErasureSimFrontend`.
+        """Construct an :class:`ErasureSimFrontend`.
 
         Args:
-            model: Configured `ErasureModel` to use for simulation.
+            model: Configured :class:`~erado.models.ErasureModel` to use for simulation.
             false_positive_rate: Probability that negative erasure checks are flipped.
             false_negative_rate: Probability that positive erasure checks are flipped.
         """
@@ -57,7 +57,7 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
 
     @property
     def model(self) -> models.ErasureModel:
-        """`ErasureModel` used to construct this `ErasureSimFrontend`."""
+        """:class:`~erado.models.ErasureModel` used to construct this :class:`ErasureSimFrontend`."""
         return self._model
 
     @property
@@ -148,15 +148,15 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
         ) -> ErasureSimResults:
         """Execute the simulation on a given backend for some number of shots.
 
-        This uses the `run` method on the `model` to generate the target number of shots.
-        Postselection can be enabled by setting `postselect` to `True`, in which case any shots
+        This uses the :meth:`~erado.models.ErasureModel.run` method on the :attr:`model` to generate the target number
+        of shots. Postselection can be enabled by setting ``postselect`` to ``True``, in which case any shots
         where any qubits were erased (as per potentially-noisy end-of-line checks) are rejected.
-        Further shots are generated via the `model` until the target number of shots are accepted.
+        Further shots are generated via the :attr:`model` until the target number of shots are accepted.
 
-        The calculation of per-shot fidelities can be enabled with `get_fidelities`. If enabled,
-        there must exist a snapshot gate of the form `save_x` (i.e. one of the instructions
-        specified in `erado.models.SNAPSHOT_GATES`) saving the state with the label
-        `erado.fidelity.STATE_LABEL`.
+        The calculation of per-shot fidelities can be enabled with ``get_fidelities``. If enabled,
+        there must exist a snapshot gate of the form ``save_x`` (i.e. one of the instructions
+        specified in :attr:`erado.models.SNAPSHOT_GATES`) saving the state with the label
+        :attr:`erado.fidelity.STATE_LABEL`.
 
         Args:
             backend: Circuit simulator backend.
@@ -164,10 +164,10 @@ class ErasureSimFrontend(util.MultiprocessingRNG):
             postselect: If true, postselect on negative erasure checks until the target number of
                 shots.
             get_fidelities: If true, calculate and store per-shot fidelities.
-            **kwargs: Additional keyword arguments passed onto `ErasureModel.run`.
+            **kwargs: Additional keyword arguments passed onto :meth:`erado.models.ErasureModel.run`.
 
         Raises:
-            ValueError: If `get_fidelities` is true but the circuit has no appropriate `save_x`.
+            ValueError: If ``get_fidelities`` is true but the circuit has no appropriate ``save_x``.
             RuntimeError: If the resultant number of shots does not equal the target for some reason.
 
         Returns:

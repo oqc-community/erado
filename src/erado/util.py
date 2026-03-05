@@ -25,15 +25,15 @@ type NPMatrix[T: np.generic] = np.ndarray[tuple[int, int], np.dtype[T]]
 type NPTensor[T: np.generic] = np.ndarray[tuple[int, ...], np.dtype[T]]
 """N-dimensional NumPy array of a given type.
 
-This is functionally equivalent to `numpy.typing.NDArray` but is defined here for consistency
-with our other aliases, `NPVector` and `NPMatrix`, which are both subtypes of `NPTensor`.
+This is functionally equivalent to :type:`numpy.typing.NDArray` but is defined here for consistency
+with our other aliases, :type:`NPVector` and :type:`NPMatrix`, which are both subtypes of :type:`NPTensor`.
 """
 
 
 type NestedList[T] = list[T | NestedList[T]]
-"""Arbitrarily-nested `list` of a given value type.
+"""Arbitrarily-nested :class:`list` of a given value type.
 
-This is effectively the built-in equivalent of `NPTensor`.
+This is effectively the built-in equivalent of :type:`NPTensor`.
 """
 
 
@@ -56,7 +56,7 @@ type NPPydantic[T: NPTensor] = Annotated[
 ]
 """Pydantic field annotator that enables (de-)serialisation for NumPy arrays.
 
-Don't forget that `arbitrary_types_allowed=True` is still required on models if using this
+Don't forget that ``arbitrary_types_allowed=True`` is still required on models if using this
 annotator.
 """
 
@@ -68,19 +68,19 @@ def get_series(
     ) -> NPVector | NPMatrix:
     """Make a data series from a collection of Pydantic models.
 
-    The NumPy `dtype` is inferred from the type annotation in the model definition. A type
+    The NumPy ``dtype`` is inferred from the type annotation in the model definition. A type
     annotation is therefore required on the field (dynamic inference is not possible due to the use
-    of `numpy.fromiter` for performance).
+    of :func:`numpy.fromiter` for performance).
 
-    If the requested field is a scalar or other arbitrary object type, an `NPVector` is returned
-    with length equal to the number of objects in `models`.
+    If the requested field is a scalar or other arbitrary object type, an :type:`NPVector` is returned
+    with length equal to the number of objects in ``models``.
 
-    If the requested field is a NumPy vector (annotated as `NPPydantic[NPVector[T]]`), an
-    `NPMatrix[T]` is returned with each vector as a row. As the matrix must be square, `subarray_size`
-    must be provided and all vectors in `models` must be of this length.
+    If the requested field is a NumPy vector (annotated as ``NPPydantic[NPVector[T]]``), an
+    ``NPMatrix[T]`` is returned with each vector as a row. As the matrix must be square, ``subarray_size``
+    must be provided and all vectors in ``models`` must be of this length.
 
     Higher-dimensional subarrays are not currently supported (i.e. the field cannot be
-    `NPMatrix`/`NPTensor`).
+    :type:`NPMatrix` or :type:`NPTensor`).
 
     Args:
         models: Collection of model instances.
@@ -89,11 +89,11 @@ def get_series(
 
     Raises:
         TypeError: If field has no type annotation.
-        NotImplementedError: If field is a `NPMatrix`/`NPTensor` (not currently supported).
-        ValueError: If subarray_size is not provided despite the field being a subarray type.
+        NotImplementedError: If field is a :type:`NPMatrix` or :type:`NPTensor` (not currently supported).
+        ValueError: If ``subarray_size`` is not provided despite the field being a subarray type.
 
     Returns:
-        NumPy array with `dtype` corresponding to the field declaration.
+        NumPy array with ``dtype`` corresponding to the field declaration.
     """
     field_type = type(next(iter(models))).model_fields[field].annotation
     if field_type is None:
@@ -119,8 +119,8 @@ def get_series(
 class MultiprocessingRNG:
     """Mixin class providing a NumPy random number generator (RNG) suitable for multiprocessing.
 
-    Via the `_reseed` protected method, this allows for child processes to each have seeds which
-    are unique yet deterministic w.r.t. the primary seed (or fully random if the seed is `None`).
+    Via the :meth:`_reseed` protected method, this allows for child processes to each have seeds which
+    are unique yet deterministic w.r.t. the primary seed (or fully random if the seed is ``None``).
     """
     _seed: int | None = None
     _rng: np.random.Generator = np.random.default_rng()
@@ -182,7 +182,7 @@ def working_directory(path: pathlib.Path, mkdir: bool = True) -> Generator[None]
 def get_mp_context() -> multiprocessing.context.DefaultContext | multiprocessing.context.ForkServerContext:
     """Obtain a suitable multiprocessing context for the current platform.
 
-    This ensures that `fork` is not the start method, instead preferring `forkserver`.
+    This ensures that ``fork`` is not the start method, instead preferring ``forkserver``.
 
     Returns:
         Multiprocessing context.

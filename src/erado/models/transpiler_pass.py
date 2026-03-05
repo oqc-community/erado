@@ -23,12 +23,12 @@ class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
     """Transpiler pass implementing erasable qubits.
 
     This bakes conditional gates into arbitrary quantum circuits representing qubit erasure logic.
-    A classical register `ERASURE_CREG_NAME` is added, with one bit representing the Boolean erasure
+    A classical register :attr:`ERASURE_CREG_NAME` is added, with one bit representing the Boolean erasure
     state for each qubit in the circuit. Any gates on erased qubits are disabled via IF statements
     on the relevant erasure bits.
 
-    A single ancilla qubit `ERASER_QREG_NAME` is also added, which is solely used to populate erasure
-    events via the noise model provided by `add_erasure_noise`.
+    A single ancilla qubit :attr:`ERASER_QREG_NAME` is also added, which is solely used to populate erasure
+    events via the noise model provided by :func:`add_erasure_noise`.
 
     The main benefit of this method is a single circuit layout which can be batch-simulated.
     The main drawback of this method is that conditional logic is considerably slower than a 'pure'
@@ -37,13 +37,13 @@ class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
     Note that due to the in-circuit conditional logic, populating erasures after gates is more efficient
     than populating them before gates; this is the default behaviour, but either approach can be selected.
 
-    See `example_ErasurePass` for example usage.
+    See ``example_ErasurePass`` for example usage.
     """
     ERASURE_CREG_NAME = "erased"
     ERASER_QREG_NAME = "q_eraser"
 
     def __init__(self, erasure_before_gates: bool = False):
-        """Construct a new `ErasurePass` transpiler pass object.
+        """Construct a new :class:`ErasurePass` transpiler pass object.
 
         Args:
             erasure_before_gates: If true, erasures are inflicted before a gate, not after.
@@ -164,19 +164,19 @@ def add_erasure_noise(
         qc: qiskit.QuantumCircuit,
         erasure_rate: float,
     ) -> None:
-    """Add an erasure noise model to an `ErasurePass` circuit.
+    """Add an erasure noise model to an :class:`ErasurePass` circuit.
 
-    This model populates erasure events via Pauli noise on the `ErasurePass.ERASER_QREG_NAME` ancilla.
+    This model populates erasure events via Pauli noise on the :attr:`ErasurePass.ERASER_QREG_NAME` ancilla.
 
-    One should avoid using `add_all_qubit_quantum_error` in other error modes in the model, so as
-    not to introduce additional noise on this ancilla. Instead, prefer to use `add_quantum_error`
+    One should avoid using :meth:`add_all_qubit_quantum_error` in other error modes in the model, so as
+    not to introduce additional noise on this ancilla. Instead, prefer to use meth:`add_quantum_error`
     on explicit qubits, via a loop or otherwise.
 
-    See `example_ErasurePass` for example usage.
+    See ``example_ErasurePass`` for example usage.
 
     Args:
         noise_model: Preexisting Qiskit Aer noise model.
-        qc: Qiskit circuit (must have had `ErasurePass` applied).
+        qc: Qiskit circuit (must have had :class:`ErasurePass` applied).
         erasure_rate: Uniform erasure rate.
     """
     error = qiskit_aer.noise.pauli_error([("X", erasure_rate), ("I", 1 - erasure_rate)])
@@ -184,9 +184,9 @@ def add_erasure_noise(
 
 
 class ErasurePassJob:
-    """Utility class to run `ErasurePass`-based simulations.
+    """Utility class to run :class:`ErasurePass`-based simulations.
 
-    Fulfills the `ErasureModel` protocol.
+    Fulfills the :class:`ErasureModel` protocol.
     """
     def __init__(
             self,
@@ -232,7 +232,7 @@ class ErasurePassJob:
 
     @property
     def circuit_erasure(self) -> qiskit.QuantumCircuit:
-        """Copy of circuit with `ErasurePass` applied."""
+        """Copy of circuit with :class:`ErasurePass` applied."""
         return self._circuit_erasure
 
     @property
@@ -247,7 +247,7 @@ class ErasurePassJob:
 
     @property
     def n_erasable_gates(self) -> int:
-        """Number of erasable gates (i.e. not in `EXEMPT_GATES`) in the circuit."""
+        """Number of erasable gates (i.e. not in :attr:`EXEMPT_GATES`) in the circuit."""
         return self._n_erasable_gates
 
     def run(
@@ -260,11 +260,11 @@ class ErasurePassJob:
         """Execute the simulation on a given backend for some number of shots.
 
         This method temporarily replaces the backend's noise model with a copy with
-        `add_erasure_noise` called on it. The original noise model is replaced at this method's
+        :func:`add_erasure_noise` called on it. The original noise model is replaced at this method's
         completion.
 
-        Note that due to the reliance on noisy simulation, only `AerSimulator` is supported as a
-        backend; a `TypeError` will be raised if any other backend is given.
+        Note that due to the reliance on noisy simulation, only :class:`AerSimulator` is supported as a
+        backend; a :class:`TypeError` will be raised if any other backend is given.
 
         Args:
             backend: Circuit simulator backend.
@@ -272,10 +272,10 @@ class ErasurePassJob:
             callbacks: Collection of per-shot callback functions.
 
         Raises:
-            TypeError: If the backend is not an `AerSimulator`.
+            TypeError: If the backend is not an :class:`AerSimulator`.
 
         Returns:
-            A map of each `CircuitState` to the number of times it was observed.
+            A map of each :class:`CircuitState` to the number of times it was observed.
         """
         if type(backend) is not qiskit_aer.AerSimulator:
             raise TypeError("Only AerSimulator is supported for ErasurePassJob.")
