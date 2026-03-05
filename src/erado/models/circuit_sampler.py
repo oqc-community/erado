@@ -5,7 +5,6 @@ from erado import (
     models,
 )
 
-import qiskit
 import qiskit.circuit
 import qiskit.providers
 
@@ -34,8 +33,9 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
     The main benefit of this method is that strictly no overhead is introduced on circuits.
     The main drawback of this method is that circuits are individually sampled and simulated.
 
-    Note that the :meth:`seed` method (provided via :class:`~erado.util.MultiprocessingRNG`) correctly affects/overrides
-    the seed behaviour of the backend provided to :meth:`run`.
+    Note that the :meth:`~erado.util.MultiprocessingRNG.seed` method (provided via
+    :class:`~erado.util.MultiprocessingRNG`) correctly affects/overrides the seed behaviour of the backend provided to
+    :meth:`run`.
 
     Fulfills the :class:`ErasureModel` protocol.
 
@@ -43,7 +43,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
     """
     def __init__(
             self,
-            circuit: qiskit.QuantumCircuit,
+            circuit: qiskit.circuit.QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
             timeout: float | None = 10.0,
@@ -66,7 +66,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
         self._precompute_lut()
 
     @property
-    def circuit(self) -> qiskit.QuantumCircuit:
+    def circuit(self) -> qiskit.circuit.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         return self._circuit
 
@@ -117,7 +117,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
     def sample(
             self,
             erasure_events: util.NPVector[np.int64] | None = None,
-        ) -> tuple[qiskit.QuantumCircuit, util.NPVector[np.int64], set[qiskit.circuit.Qubit]]:
+        ) -> tuple[qiskit.circuit.QuantumCircuit, util.NPVector[np.int64], set[qiskit.circuit.Qubit]]:
         """Sample the circuit, i.e. delete gates based on erasure events.
 
         If erasure events (a Boolean flag for each gate in the circuit) are not provided, they are

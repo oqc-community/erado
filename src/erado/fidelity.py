@@ -2,7 +2,7 @@
 
 from erado import models
 
-import qiskit
+import qiskit.circuit
 from qiskit import quantum_info
 
 import numpy as np
@@ -15,7 +15,7 @@ from collections.abc import Generator
 _logger = logging.getLogger(__name__)
 
 
-def calculate_statevector(circuit: qiskit.QuantumCircuit) -> quantum_info.Statevector:
+def calculate_statevector(circuit: qiskit.circuit.QuantumCircuit) -> quantum_info.Statevector:
     """Get the statevector representing the final state of a quantum circuit.
 
     Any final measurements and snapshot gates are removed for the purposes of calculating the final
@@ -57,7 +57,7 @@ class FidelityFunctor:
     def __init__(
             self,
             shots: int,
-            circuit: qiskit.QuantumCircuit | None = None,
+            circuit: qiskit.circuit.QuantumCircuit | None = None,
             smm: managers.SharedMemoryManager | None = None,
         ):
         """Construct a new :class:`FidelityFunctor`.

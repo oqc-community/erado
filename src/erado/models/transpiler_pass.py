@@ -2,7 +2,6 @@
 
 from erado import models
 
-import qiskit
 import qiskit.circuit as qkc
 import qiskit.transpiler
 import qiskit.transpiler.basepasses
@@ -86,13 +85,13 @@ class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
 
         for node in gates:
             # Create a new QuantumCircuit directly containing the original gate
-            gate_circuit = qiskit.QuantumCircuit(qkc.QuantumRegister(bits=node.qargs),
-                                                 qkc.ClassicalRegister(bits=node.cargs))
+            gate_circuit = qkc.QuantumCircuit(qkc.QuantumRegister(bits=node.qargs),
+                                              qkc.ClassicalRegister(bits=node.cargs))
             gate_circuit.append(node.op, node.qargs, node.cargs)
 
             # Create a new QuantumCircuit implementing a noise-controlled erasure event
             erasure_cargs = [erasure_creg[dag.find_bit(qarg)[0]] for qarg in node.qargs]
-            eraser_circuit = qiskit.QuantumCircuit(erasure_qreg, qkc.ClassicalRegister(bits=erasure_cargs))
+            eraser_circuit = qkc.QuantumCircuit(erasure_qreg, qkc.ClassicalRegister(bits=erasure_cargs))
             for carg in erasure_cargs:
                 # This 0 state is flipped pre-measurement by the noise channel
                 eraser_circuit.append(qkc.Measure(), [erasure_qreg], [carg])
@@ -137,7 +136,7 @@ class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
 
 
 def get_qubit_by_name(
-        qc: qiskit.QuantumCircuit,
+        qc: qkc.QuantumCircuit,
         name: str,
     ) -> int:
     """Return the index of the sole/first qubit in a qreg of a given name.
@@ -161,7 +160,7 @@ def get_qubit_by_name(
 
 def add_erasure_noise(
         noise_model: qiskit_aer.noise.NoiseModel,
-        qc: qiskit.QuantumCircuit,
+        qc: qkc.QuantumCircuit,
         erasure_rate: float,
     ) -> None:
     """Add an erasure noise model to an :class:`ErasurePass` circuit.
@@ -190,7 +189,7 @@ class ErasurePassJob:
     """
     def __init__(
             self,
-            circuit: qiskit.QuantumCircuit,
+            circuit: qkc.QuantumCircuit,
             erasure_rate: float = 0.5,
             erasure_before_gates: bool = False,
         ):
@@ -226,12 +225,12 @@ class ErasurePassJob:
         self._n_erasable_gates = ep.n_erasable_gates
 
     @property
-    def circuit(self) -> qiskit.QuantumCircuit:
+    def circuit(self) -> qkc.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         return self._circuit
 
     @property
-    def circuit_erasure(self) -> qiskit.QuantumCircuit:
+    def circuit_erasure(self) -> qkc.QuantumCircuit:
         """Copy of circuit with :class:`ErasurePass` applied."""
         return self._circuit_erasure
 

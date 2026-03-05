@@ -1,6 +1,6 @@
 """Defines the core erasure simulation components."""
 
-import qiskit
+import qiskit.circuit
 import qiskit.providers
 import qiskit.result
 
@@ -133,7 +133,7 @@ class ErasureModel(Protocol):
     Any class fulfilling this protocol may be used with :class:`erado.frontend.ErasureSimFrontend`.
     """
     @property
-    def circuit(self) -> qiskit.QuantumCircuit:
+    def circuit(self) -> qiskit.circuit.QuantumCircuit:
         """Qiskit quantum circuit being simulated."""
         ...
 
@@ -142,7 +142,7 @@ class ErasureModel(Protocol):
         """Number of erasable gates (i.e. not in :attr:`EXEMPT_GATES`) in the circuit."""
         ...
 
-    def __init__(self, circuit: qiskit.QuantumCircuit, erasure_rate: float):
+    def __init__(self, circuit: qiskit.circuit.QuantumCircuit, erasure_rate: float):
         """Construct a model with a Qiskit circuit and uniform erasure rate."""
         ...
 
