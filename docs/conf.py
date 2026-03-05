@@ -57,7 +57,7 @@ html_static_path = [
     "_static",
 ]
 
-html_title = "erado"
+html_title = "erado | docs"
 
 html_theme_options = {
     "light_logo": "OQC-Logo-Black.svg",
