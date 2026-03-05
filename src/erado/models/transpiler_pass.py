@@ -1,6 +1,6 @@
 """Defines the transpiler-pass simulation model."""
 
-from erado.models import core
+from erado import models
 
 import qiskit
 import qiskit.circuit as qkc
@@ -73,7 +73,7 @@ class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):
     def run(self, dag: qiskit.dagcircuit.DAGCircuit) -> qiskit.dagcircuit.DAGCircuit:
         # Collect all erasable quantum operations
         gates = [node for node in dag.op_nodes()
-                 if node.name not in core.EXEMPT_GATES]
+                 if node.name not in models.EXEMPT_GATES]
         self._n_erasable_gates = len(gates)
 
         # Add new classical register of qubit erasure flags
@@ -211,7 +211,7 @@ class ErasurePassJob:
 
         # Ensure that snapshot gates correctly apply to all qubits despite new ERASER_QREG
         for i, gate in enumerate(self._circuit_erasure.data):
-            if gate.name in core.SNAPSHOT_GATES:
+            if gate.name in models.SNAPSHOT_GATES:
                 gate.operation.num_qubits = self._circuit_erasure.num_qubits
 
                 # Ensure the new instruction is correct by appending it, then move it to overwrite
@@ -254,9 +254,9 @@ class ErasurePassJob:
             self,
             backend: qiskit.providers.BackendV2,
             shots: int,
-            callbacks: Sequence[core.ShotCallback] = [],
+            callbacks: Sequence[models.ShotCallback] = [],
             **_,
-        ) -> collections.Counter[core.CircuitState]:
+        ) -> collections.Counter[models.CircuitState]:
         """Execute the simulation on a given backend for some number of shots.
 
         This method temporarily replaces the backend's noise model with a copy with
@@ -296,10 +296,10 @@ class ErasurePassJob:
 
             for i, state in enumerate(memory):
                 for callback in callbacks:
-                    callback(core.ShotInfo(
+                    callback(models.ShotInfo(
                         self,
                         result,
-                        core.CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
+                        models.CircuitState.from_qiskit_string(state, self.circuit.num_qubits),
                         i,
                         0,
                         i,
@@ -311,7 +311,7 @@ class ErasurePassJob:
 
         counts = result.get_counts()
 
-        return collections.Counter({core.CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
+        return collections.Counter({models.CircuitState.from_qiskit_string(key, self.circuit.num_qubits): value
                                     for key, value in counts.items()})
 
 

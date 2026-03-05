@@ -4,15 +4,21 @@ For the full list of built-in configuration values, see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
-# -- Project information -----------------------------------------------------
+import sphinx.util.logging
+
+
+_logger = sphinx.util.logging.getLogger(__name__)
+
+
+# Project information
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "erado"
-copyright = "2026, Oxford Quantum Circuits Ltd"
+copyright = "2026, Oxford Quantum Circuits"
 author = "Sam J. Griffiths"
 
 
-# -- General configuration ---------------------------------------------------
+# General configuration
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
@@ -34,7 +40,7 @@ exclude_patterns = [
 autodoc_typehints = "both"
 
 
-# -- Options for HTML output -------------------------------------------------
+# Options for HTML output
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
@@ -45,7 +51,7 @@ html_static_path = [
 html_title = "erado"
 
 
-# -- Options for AutoAPI -------------------------------------------------
+# Options for AutoAPI
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
 
 autoapi_dirs = [
@@ -63,4 +69,24 @@ autoapi_options = [
 
 autoapi_python_class_content = "both"
 
-# TODO: Add cross-referencing tags to all docstrings.
+
+# Event callbacks
+# https://www.sphinx-doc.org/en/master/extdev/event_callbacks.html
+
+def skip_submodules(app, what, name, obj, skip, options):
+    """Hide private/implementation modules from documentation."""
+    SKIPPED_MODULES = [
+        "erado.models.circuit_sampler",
+        "erado.models.core",
+        "erado.models.transpiler_pass",
+    ]
+
+    if what == "module" and name in SKIPPED_MODULES:
+        _logger.info(f"Skipping module {name}.")
+        skip = True
+
+    return skip
+
+
+def setup(sphinx):
+    sphinx.connect("autoapi-skip-member", skip_submodules)
