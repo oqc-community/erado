@@ -59,6 +59,11 @@ html_static_path = [
 
 html_title = "erado"
 
+html_theme_options = {
+    "light_logo": "OQC-Logo-Black.svg",
+    "dark_logo": "OQC-Logo-White.svg",
+}
+
 
 # Options for AutoAPI
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
