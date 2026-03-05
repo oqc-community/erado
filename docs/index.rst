@@ -12,5 +12,5 @@
 
    self
    autoapi/index
-   license
+   lic-page
    genindex
