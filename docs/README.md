@@ -23,7 +23,7 @@ pip install erado -i https://pypi.int.oqc.app/simple
 
 or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using uv/Poetry).
 
-> [!NOTE]
+> ⚠️ **NOTE:**
 > GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
 
 ### From source (uv)
