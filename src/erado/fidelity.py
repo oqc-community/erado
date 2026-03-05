@@ -72,7 +72,7 @@ class FidelityFunctor:
 
         1. the circuit's ideal statevector is calculated once and cached, and
         2. it is guaranteed that no more or less shared memory than necessary is allocated for
-        :class:`erado.models.CircuitState` representation.
+            :class:`erado.models.CircuitState` representation.
 
         If a circuit is not provided, the fallback default allocation supports up to 64 qubits.
 
