@@ -263,7 +263,7 @@ class ErasurePassJob:
         :func:`add_erasure_noise` called on it. The original noise model is replaced at this method's
         completion.
 
-        Note that due to the reliance on noisy simulation, only :class:`AerSimulator` is supported as a
+        Note that due to the reliance on noisy simulation, only :class:`qiskit_aer.AerSimulator` is supported as a
         backend; a :class:`TypeError` will be raised if any other backend is given.
 
         Args:
@@ -272,7 +272,7 @@ class ErasurePassJob:
             callbacks: Collection of per-shot callback functions.
 
         Raises:
-            TypeError: If the backend is not an :class:`AerSimulator`.
+            TypeError: If the backend is not an :class:`~qiskit_aer.AerSimulator`.
 
         Returns:
             A map of each :class:`CircuitState` to the number of times it was observed.

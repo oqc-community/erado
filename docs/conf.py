@@ -24,6 +24,7 @@ author = "Sam J. Griffiths"
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
     "autoapi.extension",
     "myst_parser",
 ]
@@ -38,6 +39,14 @@ exclude_patterns = [
 ]
 
 autodoc_typehints = "both"
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "pydantic": ("https://docs.pydantic.dev/latest", None),
+    "qiskit": ("https://quantum.cloud.ibm.com/docs/api/qiskit", None),
+    "qiskit-aer": ("https://qiskit.github.io/qiskit-aer", None),
+}
 
 
 # Options for HTML output
