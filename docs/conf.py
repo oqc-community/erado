@@ -8,9 +8,13 @@ from sphinx.util import logging
 
 import os
 import re
+import pathlib
 
 
 _logger = logging.getLogger(__name__)
+
+
+BUILD_PATH = pathlib.Path("docs/_build")
 
 
 # Project information

@@ -5,6 +5,7 @@ import git
 import logging
 
 from docs import conf
+from docs.util import core
 
 
 _logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def get_latest_release() -> git.TagReference:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    core.configure_logging()
 
     latest_release = get_latest_release()
     _logger.info(f"Latest release: {latest_release.name}")
