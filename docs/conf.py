@@ -5,9 +5,28 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import sphinx.util.logging
+import git
+
+import re
 
 
 _logger = sphinx.util.logging.getLogger(__name__)
+
+
+# Dynamically find the latest release tag
+repo = git.Repo("..")
+_logger.info(f"[Git] Repo: {repo.working_tree_dir}")
+_logger.info(f"[Git] Active branch: {repo.active_branch}")
+
+# Releases are tags in the form: vX.X.X(.postX)
+RELEASE_PATTERN = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
+RELEASE_REGEX = re.compile(RELEASE_PATTERN)
+
+release_tags = [tag for tag in repo.tags
+                if RELEASE_REGEX.match("refs/tags/" + tag.name)]
+latest_release_tag = release_tags[-1]
+
+_logger.info(f"[Git] Latest release tag: {latest_release_tag.name}")
 
 
 # Project information
@@ -102,8 +121,8 @@ autoapi_python_class_content = "both"
 # Options for sphinx-multiversion
 # https://sphinx-contrib.github.io/multiversion/main/configuration.html
 
-# Releases are tags in the form: vX.X.X(.postX)
-smv_released_pattern = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
+smv_released_pattern = RELEASE_PATTERN
+smv_latest_version = latest_release_tag.name
 
 
 # Event callbacks

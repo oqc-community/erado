@@ -30,6 +30,7 @@ dev = [
 ]
 docs = [
     "furo>=2025.12.19",
+    "gitpython>=3.1.46",
     "myst-parser>=5.0.0",
     "sphinx<9.0.0",  # sphinx-multiversion is currently broken for Sphinx 9
     "sphinx-autoapi>=3.7.0",
@@ -56,6 +57,7 @@ unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
 docs = { shell = "rm -rf docs/_build && sphinx-multiversion docs docs/_build" }
+docs-local = { shell = "rm -rf docs/_build/local && sphinx-build docs docs/_build/local" }
 
 [tool.poe.tasks.checks]
 sequence = [
