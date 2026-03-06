@@ -1,19 +1,21 @@
 {% if versions %}
-<h3>{{ _('Releases') }}</h3>
-<ul>
-    {%- for item in versions.releases %}
-    <li><a href="{{ item.url }}">
-        {{ item.name }}
-        {% if item.name == latest_version.name %}
-        (latest)
-        {% endif %}
-    </a></li>
-    {%- endfor %}
-</ul>
-<h3>{{ _('Development') }}</h3>
-<ul>
-    {%- for item in versions.in_development %}
-    <li><a href="{{ item.url }}">{{ item.name }}</a></li>
-    {%- endfor %}
-</ul>
+
+<select onChange="window.location.pathname=this.value">
+    <optgroup label="Releases">
+        {%- for item in versions.releases %}
+        <option value="{{ item.url }}">
+            {{ item.name }}
+            {% if item.name == latest_version.name %}
+            (latest)
+            {% endif %}
+        </option>
+        {%- endfor %}
+    </optgroup>
+    <optgroup label="Development">
+        {%- for item in versions.in_development %}
+        <option value="{{ item.url }}">{{ item.name }}</option>
+        {%- endfor %}
+    </optgroup>
+</select>
+
 {% endif %}
