@@ -4,13 +4,23 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Sphinx: build",
+            "label": "Docs: build",
             "type": "shell",
-            "command": "uv run --group docs poe docs",
+            "command": "uv run --group docs poe docs-build",
             "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
+            }
+        },
+        {
+            "label": "Docs: preview",
+            "type": "shell",
+            "command": "uv run --group docs poe docs-preview",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
             }
         }
     ]

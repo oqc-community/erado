@@ -51,17 +51,13 @@ style = "pep440"
 
 
 [tool.poe.tasks]
-types = "pyright ."
-pre-commit = "pre-commit run --all-files"
-unit-tests = "pytest tests/"
-lint = "ruff check ."
-stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
-docs = [
-    { cmd = "rm -rf docs/_build" },
-    { cmd = "uv run docs/version.py" },
-    { cmd = "sphinx-multiversion docs docs/_build", envfile = "version.env" },
-]
-docs-local = { shell = "rm -rf docs/_build && sphinx-build docs docs/_build/local" }
+lint = { cmd = "ruff check .", help = "Run linter (Ruff)" }
+types = { cmd = "pyright .", help = "Run type checker (Pyright)" }
+unit-tests = { cmd = "pytest tests/", help = "Run unit tests (pytest)" }
+
+pre-commit = { cmd = "pre-commit run --all-files", help = "Run pre-commit hook rules on all files" }
+
+stubs = { cmd = "python src/make_stubs.py qiskit._accelerate.circuit ./typings", help = "Generate type stubs for Qiskit circuit extension module" }
 
 [tool.poe.tasks.checks]
 sequence = [
@@ -70,6 +66,22 @@ sequence = [
     "unit-tests",
 ]
 ignore_fail = true
+help = "Run all status checks (lint, types, unit-tests)"
+
+[tool.poe.tasks.docs-build]
+sequence = [
+    { cmd = "rm -rf docs/_build" },
+    { script = "docs.version" },
+    { cmd = "sphinx-multiversion docs docs/_build", envfile = "version.env" },
+]
+help = "Clean-build docs site with all eligible versions (requires 'docs' group)"
+
+[tool.poe.tasks.docs-preview]
+sequence = [
+    { cmd = "rm -rf docs/_build" },
+    { cmd = "sphinx-build docs docs/_build/preview" },
+]
+help = "Clean-build docs site from just local working copy (requires 'docs' group)"
 
 
 [tool.pyright]

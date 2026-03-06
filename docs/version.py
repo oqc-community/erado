@@ -1,8 +1,10 @@
+"""Script to save the latest release tag as an environment file."""
+
 import git
 
 import logging
 
-import conf
+from docs import conf
 
 
 _logger = logging.getLogger(__name__)
