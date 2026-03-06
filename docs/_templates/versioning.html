@@ -1,9 +1,14 @@
 {% if versions %}
 
-<select onChange="window.location.pathname=this.value">
+<select onChange="window.location.href=this.value">
     <optgroup label="Releases">
         {%- for item in versions.releases %}
-        <option value="{{ item.url }}">
+        <option
+            value="{{ item.url }}"
+            {% if item.name == current_version.name %}
+            selected
+            {% endif %}
+        >
             {{ item.name }}
             {% if item.name == latest_version.name %}
             (latest)
@@ -13,7 +18,14 @@
     </optgroup>
     <optgroup label="Development">
         {%- for item in versions.in_development %}
-        <option value="{{ item.url }}">{{ item.name }}</option>
+        <option
+            value="{{ item.url }}"
+            {% if item.name == current_version.name %}
+            selected
+            {% endif %}
+        >
+            {{ item.name }}
+        </option>
         {%- endfor %}
     </optgroup>
 </select>

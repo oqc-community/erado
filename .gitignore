@@ -196,3 +196,4 @@ pyrightconfig.json
 
 # erado-specific ignores
 data/
+version.env

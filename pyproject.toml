@@ -56,8 +56,12 @@ pre-commit = "pre-commit run --all-files"
 unit-tests = "pytest tests/"
 lint = "ruff check ."
 stubs = "python src/make_stubs.py qiskit._accelerate.circuit ./typings"
-docs = { shell = "rm -rf docs/_build && sphinx-multiversion docs docs/_build" }
-docs-local = { shell = "rm -rf docs/_build/local && sphinx-build docs docs/_build/local" }
+docs = [
+    { cmd = "rm -rf docs/_build" },
+    { cmd = "uv run docs/version.py" },
+    { cmd = "sphinx-multiversion docs docs/_build", envfile = "version.env" },
+]
+docs-local = { shell = "rm -rf docs/_build && sphinx-build docs docs/_build/local" }
 
 [tool.poe.tasks.checks]
 sequence = [

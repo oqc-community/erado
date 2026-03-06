@@ -4,29 +4,13 @@ For the full list of built-in configuration values, see the documentation:
 https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
-import sphinx.util.logging
-import git
+from sphinx.util import logging
 
+import os
 import re
 
 
-_logger = sphinx.util.logging.getLogger(__name__)
-
-
-# Dynamically find the latest release tag
-repo = git.Repo("..")
-_logger.info(f"[Git] Repo: {repo.working_tree_dir}")
-_logger.info(f"[Git] Active branch: {repo.active_branch}")
-
-# Releases are tags in the form: vX.X.X(.postX)
-RELEASE_PATTERN = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
-RELEASE_REGEX = re.compile(RELEASE_PATTERN)
-
-release_tags = [tag for tag in repo.tags
-                if RELEASE_REGEX.match("refs/tags/" + tag.name)]
-latest_release_tag = release_tags[-1]
-
-_logger.info(f"[Git] Latest release tag: {latest_release_tag.name}")
+_logger = logging.getLogger(__name__)
 
 
 # Project information
@@ -121,8 +105,19 @@ autoapi_python_class_content = "both"
 # Options for sphinx-multiversion
 # https://sphinx-contrib.github.io/multiversion/main/configuration.html
 
+# Releases are tags in the form: vX.X.X(.postX)
+RELEASE_PATTERN = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
+RELEASE_REGEX = re.compile(RELEASE_PATTERN)
+
+# Store the latest release as a loadable environment variable
+ENV_FILE = "version.env"
+ENV_LATEST_RELEASE = "ERADO_LATEST_RELEASE"
+
+latest_release_tag = os.environ.get("ERADO_LATEST_RELEASE", "NOT_FOUND")
+_logger.info(f"latest_release_tag: {latest_release_tag}")
+
 smv_released_pattern = RELEASE_PATTERN
-smv_latest_version = latest_release_tag.name
+smv_latest_version = latest_release_tag
 
 
 # Event callbacks
