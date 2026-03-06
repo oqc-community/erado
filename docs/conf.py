@@ -25,6 +25,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
+    "sphinx_multiversion",
     "autoapi.extension",
     "myst_parser",
 ]
@@ -64,6 +65,20 @@ html_theme_options = {
     "dark_logo": "OQC-Logo-White.svg",
 }
 
+# Furo theme default reference:
+# https://daobook.github.io/furo/customisation/sidebar/#default-design
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "versioning.html",
+        "sidebar/search.html",
+        "sidebar/navigation.html",
+        "sidebar/scroll-start.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+    ],
+}
+
 
 # Options for AutoAPI
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html
@@ -82,6 +97,13 @@ autoapi_options = [
 ]
 
 autoapi_python_class_content = "both"
+
+
+# Options for sphinx-multiversion
+# https://sphinx-contrib.github.io/multiversion/main/configuration.html
+
+# Releases are tags in the form: vX.X.X(.postX)
+smv_released_pattern = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
 
 
 # Event callbacks
