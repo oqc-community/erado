@@ -71,18 +71,24 @@ help = "Run all status checks (lint, types, unit-tests)"
 
 [tool.poe.tasks.docs-build]
 sequence = [
-    { cmd = "rm -rf docs/_build" },
-    { script = "docs.util.version" },
-    { cmd = "sphinx-multiversion docs docs/_build", envfile = "version.env" },
-    { script = "docs.util.redirect" },
+    { cmd = "rm -rf ${build_dir}" },
+    { script = "docs.util.version:main" },
+    { cmd = "sphinx-multiversion docs ${build_dir}", envfile = "version.env" },
+    { script = "docs.util.redirect:main(environ['build_dir'])" },
+]
+args = [
+    { name = "build_dir", default = "docs/_build", help = "Output build directory", positional = true },
 ]
 help = "Clean-build docs site with all eligible versions (requires 'docs' group)"
 
 [tool.poe.tasks.docs-preview]
 sequence = [
-    { cmd = "rm -rf docs/_build" },
-    { cmd = "sphinx-build docs docs/_build/preview" },
-    { script = "docs.util.redirect" },
+    { cmd = "rm -rf ${build_dir}" },
+    { cmd = "sphinx-build docs ${build_dir}/preview" },
+    { script = "docs.util.redirect:main(environ['build_dir'])" },
+]
+args = [
+    { name = "build_dir", default = "docs/_build", help = "Output build directory", positional = true },
 ]
 help = "Clean-build docs site from just local working copy (requires 'docs' group)"
 

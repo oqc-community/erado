@@ -22,7 +22,7 @@ def get_latest_release() -> git.TagReference:
     return release_tags[-1]
 
 
-if __name__ == "__main__":
+def main() -> None:
     core.configure_logging()
 
     latest_release = get_latest_release()

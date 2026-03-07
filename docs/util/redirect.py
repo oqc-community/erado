@@ -1,23 +1,26 @@
 """Script to generate a site index redirection to the latest release version."""
 
-from docs import conf
 from docs.util import core, version
 
 import jinja2
 
+import pathlib
 import logging
 
 
 _logger = logging.getLogger(__name__)
 
 
-if __name__ == "__main__":
+def main(build_dir: str) -> None:
     core.configure_logging()
 
-    latest_release = version.get_latest_release()
+    build_path = pathlib.Path(build_dir)
+    _logger.info(f"Build dir: {build_path}")
 
-    subdirs = [path.name for path in conf.BUILD_PATH.iterdir()
+    subdirs = [path.name for path in build_path.iterdir()
                if path.is_dir()]
+
+    latest_release = version.get_latest_release()
 
     if latest_release.name in subdirs:
         target = latest_release.name
@@ -31,7 +34,7 @@ if __name__ == "__main__":
         target_path = None
     else:
         # Recurse down subfolders until we find index.html
-        target_path = conf.BUILD_PATH / target
+        target_path = build_path / target
 
         while (len(children := list(target_path.iterdir())) > 0
                and "index.html" not in (child.name for child in children)):
@@ -42,13 +45,13 @@ if __name__ == "__main__":
             else:
                 target_path = first_subdir
 
-        target = str(target_path.relative_to(conf.BUILD_PATH))
+        target = str(target_path.relative_to(build_path))
         _logger.info(f"Redirect target: {target}")
 
     with open("docs/util/index.html.jinja", "r") as file:
         template: jinja2.Template = jinja2.Template(file.read())
 
-    index_file = conf.BUILD_PATH / "index.html"
+    index_file = build_path / "index.html"
 
     with open(index_file, "w") as file:
         file.write(template.render({
