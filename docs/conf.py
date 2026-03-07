@@ -60,6 +60,9 @@ intersphinx_mapping = {
 # Options for HTML output
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+ACCENT_COLOUR = "#ff8001"
+API_COLOUR = "#4682b4"
+
 html_theme = "furo"
 html_static_path = [
     "_static",
@@ -70,7 +73,20 @@ html_title = "erado | docs"
 html_theme_options = {
     "light_logo": "OQC-Logo-Black.svg",
     "dark_logo": "OQC-Logo-White.svg",
+    "light_css_variables": {
+        "color-brand-primary": ACCENT_COLOUR,
+        "color-brand-content": ACCENT_COLOUR,
+        "color-api-name": API_COLOUR,
+        "color-api-pre-name": API_COLOUR,
+    },
+    "dark_css_variables": {
+        "color-brand-primary": ACCENT_COLOUR,
+        "color-brand-content": ACCENT_COLOUR,
+        "color-api-name": API_COLOUR,
+        "color-api-pre-name": API_COLOUR,
+    },
 }
+
 
 # Furo theme default reference:
 # https://daobook.github.io/furo/customisation/sidebar/#default-design
