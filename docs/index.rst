@@ -11,6 +11,6 @@
    :maxdepth: 2
 
    self
-   autoapi/index
+   api/index
    lic-page
    genindex

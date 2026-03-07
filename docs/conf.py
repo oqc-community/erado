@@ -120,6 +120,8 @@ autoapi_options = [
 ]
 
 autoapi_python_class_content = "both"
+autoapi_root = "api"
+autoapi_own_page_level = "class"
 
 
 # Options for sphinx-multiversion
