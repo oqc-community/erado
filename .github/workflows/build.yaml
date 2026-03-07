@@ -15,7 +15,7 @@ jobs:
       group: gha-oqc-tech
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/init
 
@@ -28,7 +28,7 @@ jobs:
       group: gha-oqc-tech
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/init
 
@@ -41,7 +41,7 @@ jobs:
       group: gha-oqc-tech
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/init
 
@@ -54,7 +54,7 @@ jobs:
       group: gha-oqc-tech
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/init
 
@@ -71,7 +71,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true

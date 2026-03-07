@@ -1,0 +1,30 @@
+name: docs
+
+on: [push, workflow_dispatch]
+
+permissions:
+  contents: write
+
+env:
+  BUILD_DIR: docs/_build
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: ./.github/actions/init
+
+      - name: Build docs with Sphinx
+        run: |
+          uv run --group docs poe docs-build ${{ env.BUILD_DIR }}
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ${{ env.BUILD_DIR }}
