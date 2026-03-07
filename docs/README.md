@@ -11,6 +11,30 @@ Latin verb; *third conjugation*
 2. to abolish, eradicate, remove
 3. to ***erase***, delete
 
+## Overview
+
+erado is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
+
+<!-- TODO: Update links/authors etc. below. -->
+
+For theoretical background and numerical details, see our corresponding paper: ['The limits of erasure-based postselection for quantum error mitigation,' 2026, arXiv:xxxx.xxxx [quant-ph]](https://arxiv.org/abs/0000.00000), written by [Sam J. Griffiths](https://github.com/sgriffiths-oqc), [Jamie Friel](https://github.com/jfriel-oqc) and [Brian Vlastakis](https://github.com/bvlastakis-oqc).
+
+If using or referencing this work, please cite the paper as follows ([BibLaTeX](https://ctan.org/pkg/biblatex)):
+
+```bibtex
+@online{griffithsLimitsErasurebasedPostselection2026,
+  title = {The Limits of Erasure-Based Postselection for Quantum Error Mitigation},
+  author = {Griffiths, Sam J. and Friel, Jamie and Vlastakis, Brian},
+  date = {2026-03-07},
+  eprint = {0000.00000},
+  eprinttype = {arXiv},
+  eprintclass = {quant-ph},
+  doi = {00.00000/arXiv.0000.00000},
+  url = {https://arxiv.org/abs/0000.00000},
+  pubstate = {prepublished}
+}
+```
+
 ## Installation
 
 ### Published package
@@ -53,3 +77,5 @@ uv run poe checks
 ```
 
 This codebase broadly follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), with some variations. Specific rule definitions can be found in [pyproject.toml](../pyproject.toml).
+
+<!-- TODO: Acknowledgements section at bottom, if necessary? -->
