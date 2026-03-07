@@ -110,18 +110,25 @@ autoapi_python_class_content = "both"
 # https://sphinx-contrib.github.io/multiversion/main/configuration.html
 
 # Releases are tags in the form: vX.X.X(.postX)
-RELEASE_PATTERN = r"^refs\/tags\/v\d+\.\d+\.\d+(?:\.post\d+)*$"
-RELEASE_REGEX = re.compile(RELEASE_PATTERN)
+RELEASE_PATTERN = r"v\d+\.\d+\.\d+(?:\.post\d+)*"
+RELEASE_PATTERN_TAG = r"^" + RELEASE_PATTERN + r"$"
+RELEASE_PATTERN_REF = r"^refs\/tags\/" + RELEASE_PATTERN + r"$"
+
+RELEASE_REGEX_TAG = re.compile(RELEASE_PATTERN_TAG)
+RELEASE_REGEX_REF = re.compile(RELEASE_PATTERN_REF)
 
 # Store the latest release as a loadable environment variable
 ENV_FILE = "version.env"
 ENV_LATEST_RELEASE = "ERADO_LATEST_RELEASE"
 
-latest_release_tag = os.environ.get("ERADO_LATEST_RELEASE", "NOT_FOUND")
+latest_release_tag = os.environ.get("ERADO_LATEST_RELEASE", "NOT_SET")
 _logger.info(f"latest_release_tag: {latest_release_tag}")
 
-smv_released_pattern = RELEASE_PATTERN
+smv_released_pattern = RELEASE_PATTERN_REF
 smv_latest_version = latest_release_tag
+
+smv_tag_whitelist = RELEASE_PATTERN_TAG
+smv_branch_whitelist = r"^main$"
 
 
 # Event callbacks

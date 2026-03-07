@@ -17,7 +17,7 @@ def get_latest_release() -> git.TagReference:
     _logger.info(f"Active branch: {repo.active_branch}")
 
     release_tags = [tag for tag in repo.tags
-                    if conf.RELEASE_REGEX.match("refs/tags/" + tag.name)]
+                    if conf.RELEASE_REGEX_TAG.match(tag.name)]
 
     return release_tags[-1]
 
