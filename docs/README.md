@@ -2,7 +2,7 @@
 
 Simulation suite for error mitigation via dimon erasure models.
 
-[![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![OQC PyPI](https://img.shields.io/badge/OQC%20PyPI-latest-cornflowerblue?logo=pypi)](https://pypi.int.oqc.app/simple/erado)
+[![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![OQC PyPI](https://img.shields.io/badge/OQC%20PyPI-latest-cornflowerblue?logo=pypi)](https://pypi.int.oqc.app/simple/erado) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-tech.github.io/erado)
 
 [**ērādō**](https://en.wiktionary.org/wiki/erado) \
 Latin verb; *third conjugation*
@@ -13,7 +13,9 @@ Latin verb; *third conjugation*
 
 ## Overview
 
-erado is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
+`erado` is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
+
+For installation/usage instructions and API reference, [please see the library documentation](https://oqc-tech.github.io/erado).
 
 <!-- TODO: Update links/authors etc. below. -->
 
