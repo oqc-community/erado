@@ -11,6 +11,7 @@
    :maxdepth: 2
 
    self
+   CONTRIBUTING
    api/index
    lic-page
    genindex

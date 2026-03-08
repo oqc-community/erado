@@ -13,7 +13,7 @@ Latin verb; *third conjugation*
 
 ## Overview
 
-`erado` is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
+[`erado`](https://github.com/oqc-tech/erado) is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based Python library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
 
 For installation/usage instructions and API reference, [please see the library documentation](https://oqc-tech.github.io/erado).
 
@@ -41,43 +41,19 @@ If using or referencing this work, please cite the paper as follows ([BibLaTeX](
 
 ### Published package
 
-This package is published to our internal PyPI (<https://pypi.int.oqc.app/simple/>) and so, assuming you have access to this source, you can install the latest version thus:
+The `erado` Python package is published to PyPI (<https://pypi.int.oqc.app/simple/>), so you can install it easily via pip (or any similar package manager), e.g.:
 
 ```shell
 pip install erado -i https://pypi.int.oqc.app/simple
 ```
 
-or set it up as an additional dependency source in your `pyproject.toml` file (e.g. if using uv/Poetry).
+or add it as a dependency in your `pyproject.toml` file (e.g. if using uv/Poetry).
 
 > ⚠️ **NOTE:**
 > GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
 
 ### From source (uv)
 
-This package uses [uv](https://docs.astral.sh/uv) for Python project management; so, after cloning the repo, you can explicitly configure the project in a fresh virtual environment with
-
-```shell
-uv sync
-```
-
-This repo uses [pre-commit hooks](https://github.com/pre-commit/pre-commit) to ensure basic code quality (e.g. whitespace, line endings etc.); if you intend to contribute after cloning, it's best to set up pre-commits (to avoid failing PR checks) once with
-
-```shell
-uv run pre-commit install
-```
-
-Pre-commit hooks automatically check against changed files only. If you want to manually invoke the pre-commit rules on all files in the repo (although, by design, you generally won't need to do that), simply run
-
-```shell
-uv run poe pre-commit
-```
-
-The [`poe`](https://poethepoet.natn.io/index.html) command can also be used to run other common tasks. For example, all codebase checks (i.e. [linting (Ruff)](https://docs.astral.sh/ruff), [static type checking (Pyright)](https://github.com/microsoft/pyright) and [unit tests (pytest)](https://docs.pytest.org/en/stable)) can be performed with
-
-```shell
-uv run poe checks
-```
-
-This codebase broadly follows the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), with some variations. Specific rule definitions can be found in [pyproject.toml](../pyproject.toml).
+This package uses [uv](https://docs.astral.sh/uv) for Python project management. For more information on installation from source and development/testing utilities, [please see our contribution guidelines](./CONTRIBUTING.md).
 
 <!-- TODO: Acknowledgements section at bottom, if necessary? -->
