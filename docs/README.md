@@ -1,6 +1,6 @@
 # erado
 
-Simulation suite for error mitigation via dimon erasure models.
+Simulation suite for erasure noise and postselection as quantum error mitigation.
 
 [![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![OQC PyPI](https://img.shields.io/badge/OQC%20PyPI-latest-cornflowerblue?logo=pypi)](https://pypi.int.oqc.app/simple/erado) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-tech.github.io/erado)
 
