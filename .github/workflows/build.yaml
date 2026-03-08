@@ -21,7 +21,7 @@ jobs:
 
       - name: Type checking with Pyright
         run: |
-          uv run poe types
+          uv run --all-groups poe types
 
   pre-commit-hooks:
     runs-on:
