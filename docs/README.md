@@ -62,4 +62,6 @@ This package uses [uv](https://docs.astral.sh/uv) for Python project management.
 
 For a more detailed introduction to how and why to use this library, see our ['Getting Started'](./getting-started.rst) page.
 
-<!-- TODO: Acknowledgements section at bottom, if necessary? -->
+## Acknowledgements
+
+This work was supported by the Innovate UK Quantum Missions pilot competition 10148061 DECIDE: Dimon error correction integrated into a data-centre environment.
