@@ -1,6 +1,10 @@
 name: docs
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,6 +27,10 @@ jobs:
       - name: Build docs with Sphinx
         run: |
           uv run --group docs poe docs-build ${{ env.BUILD_DIR }}
+
+      - name: Disable Jekyll processing to correctly serve static folders
+        run: |
+          touch ${{ env.BUILD_DIR }}/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
