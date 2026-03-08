@@ -11,6 +11,7 @@
    :maxdepth: 2
 
    self
+   getting-started
    CONTRIBUTING
    api/index
    lic-page

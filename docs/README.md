@@ -15,7 +15,7 @@ Latin verb; *third conjugation*
 
 [`erado`](https://github.com/oqc-tech/erado) is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based Python library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
 
-For installation/usage instructions and API reference, [please see the library documentation](https://oqc-tech.github.io/erado).
+For installation/usage instructions and API reference, please see [the library documentation](https://oqc-tech.github.io/erado).
 
 <!-- TODO: Update links/authors etc. below. -->
 
@@ -41,7 +41,7 @@ If using or referencing this work, please cite the paper as follows ([BibLaTeX](
 
 ### Published package
 
-The `erado` Python package is published to PyPI (<https://pypi.int.oqc.app/simple/>), so you can install it easily via pip (or any similar package manager), e.g.:
+The `erado` Python package is published to PyPI (<https://pypi.int.oqc.app/simple>), so you can install it easily via pip (or any similar package manager), e.g.:
 
 ```shell
 pip install erado -i https://pypi.int.oqc.app/simple
@@ -54,6 +54,12 @@ or add it as a dependency in your `pyproject.toml` file (e.g. if using uv/Poetry
 
 ### From source (uv)
 
-This package uses [uv](https://docs.astral.sh/uv) for Python project management. For more information on installation from source and development/testing utilities, [please see our contribution guidelines](./CONTRIBUTING.md).
+This package uses [uv](https://docs.astral.sh/uv) for Python project management. For more information on installation from source and development/testing utilities, please see our [contribution guidelines](./CONTRIBUTING.md).
+
+## Usage
+
+*TODO: brief, simplest example(s).*
+
+For a more detailed introduction to how and why to use this library, see our ['Getting Started'](./getting-started.rst) page.
 
 <!-- TODO: Acknowledgements section at bottom, if necessary? -->
