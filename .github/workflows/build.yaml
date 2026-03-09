@@ -79,4 +79,4 @@ jobs:
 
       - name: Publish to internal PyPI
         run: |
-          uv publish --index testpypi
+          uv publish
