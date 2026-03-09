@@ -289,7 +289,6 @@ dev = [
 docs = [
     { name = "furo" },
     { name = "gitpython" },
-    { name = "jinja2" },
     { name = "myst-parser" },
     { name = "sphinx" },
     { name = "sphinx-autoapi" },
@@ -318,7 +317,6 @@ dev = [
 docs = [
     { name = "furo", specifier = ">=2025.12.19" },
     { name = "gitpython", specifier = ">=3.1.46" },
-    { name = "jinja2", specifier = ">=3.1.6" },
     { name = "myst-parser", specifier = ">=5.0.0" },
     { name = "sphinx", specifier = "<9.0.0" },
     { name = "sphinx-autoapi", specifier = ">=3.7.0" },

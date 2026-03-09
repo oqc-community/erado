@@ -4,7 +4,7 @@
     <optgroup label="Releases">
         {%- for item in versions.releases %}
         <option
-            value="{{ item.url }}"
+            value="{{ item.url|replace(latest_version.name, 'latest') }}"
             {% if item.name == current_version.name %}
             selected
             {% endif %}

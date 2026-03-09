@@ -2,8 +2,7 @@
 
 from docs.util import core, version
 
-import jinja2
-
+import shutil
 import pathlib
 import logging
 
@@ -17,45 +16,18 @@ def main(build_dir: str) -> None:
     build_path = pathlib.Path(build_dir)
     _logger.info(f"Build dir: {build_path}")
 
-    subdirs = [path.name for path in build_path.iterdir()
-               if path.is_dir()]
 
     latest_release = version.get_latest_release()
 
-    if latest_release.name in subdirs:
-        target = latest_release.name
-    elif len(subdirs) > 0:
-        target = subdirs[0]
-    else:
-        target = None
+    # Rename latest release docs subfolder to "latest"
+    for dir in build_path.iterdir():
+        if dir.name == latest_release.name:
+            _logger.info(f"Renaming {dir.name} to \"latest\"")
+            dir.rename(build_path / "latest")
 
-    if target is None:
-        _logger.warning("Redirect target: None (there are no subdirs!)")
-        target_path = None
-    else:
-        # Recurse down subfolders until we find index.html
-        target_path = build_path / target
+    # Copy root index.html redirection file
+    index_file_source = pathlib.Path("docs/util/index.html")
+    index_file_destination = build_path / "index.html"
+    shutil.copyfile(index_file_source, index_file_destination)
 
-        while (len(children := list(target_path.iterdir())) > 0
-               and "index.html" not in (child.name for child in children)):
-            first_subdir = next((child for child in children if child.is_dir()), None)
-            if first_subdir is None:
-                _logger.warning(f"Could not recursively find index.html in {target}")
-                break
-            else:
-                target_path = first_subdir
-
-        target = str(target_path.relative_to(build_path))
-        _logger.info(f"Redirect target: {target}")
-
-    with open("docs/util/index.html.jinja", "r") as file:
-        template: jinja2.Template = jinja2.Template(file.read())
-
-    index_file = build_path / "index.html"
-
-    with open(index_file, "w") as file:
-        file.write(template.render({
-            "target": target,
-        }))
-
-    _logger.info(f"Site index created at file://{index_file.absolute()}")
+    _logger.info(f"Site index created at file://{index_file_destination.absolute()}")
