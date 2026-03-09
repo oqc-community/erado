@@ -2,7 +2,7 @@
 
 Simulation suite for erasure noise and postselection as quantum error mitigation.
 
-[![build](https://github.com/oqc-tech/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-tech/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![OQC PyPI](https://img.shields.io/badge/OQC%20PyPI-latest-cornflowerblue?logo=pypi)](https://pypi.int.oqc.app/simple/erado) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-tech.github.io/erado)
+[![build](https://github.com/oqc-community/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-community/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![PyPI - Version](https://img.shields.io/pypi/v/erado?logo=pypi&label=PyPI)](https://pypi.org/project/erado/) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-community.github.io/erado)
 
 [**ērādō**](https://en.wiktionary.org/wiki/erado) \
 Latin verb; *third conjugation*
@@ -13,9 +13,9 @@ Latin verb; *third conjugation*
 
 ## Overview
 
-[`erado`](https://github.com/oqc-tech/erado) is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based Python library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
+[`erado`](https://github.com/oqc-community/erado) is [OQC](https://oqc.tech/)'s [Qiskit](https://github.com/Qiskit/qiskit)-based Python library for the simulation of circuit-level erasure noise and postselection, with arbitrary quantum circuits.
 
-For installation/usage instructions and API reference, please see [the library documentation](https://oqc-tech.github.io/erado).
+For installation/usage instructions and API reference, please see [the library documentation](https://oqc-community.github.io/erado).
 
 <!-- TODO: Update links/authors etc. below. -->
 
@@ -41,10 +41,10 @@ If using or referencing this work, please cite the paper as follows ([BibLaTeX](
 
 ### Published package
 
-The `erado` Python package is published to PyPI (<https://pypi.int.oqc.app/simple>), so you can install it easily via pip (or any similar package manager), e.g.:
+The `erado` Python package is published to PyPI (<https://pypi.org/project/erado>), so you can install it easily via pip (or any similar package manager), e.g.:
 
 ```shell
-pip install erado -i https://pypi.int.oqc.app/simple
+pip install erado
 ```
 
 or add it as a dependency in your `pyproject.toml` file (e.g. if using uv/Poetry).
