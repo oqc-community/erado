@@ -11,8 +11,7 @@ on:
 
 jobs:
   type-checking:
-    runs-on:
-      group: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -24,8 +23,7 @@ jobs:
           uv run --all-groups poe types
 
   pre-commit-hooks:
-    runs-on:
-      group: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -37,8 +35,7 @@ jobs:
           uv run poe pre-commit
 
   unit-tests:
-    runs-on:
-      group: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -50,8 +47,7 @@ jobs:
           uv run poe unit-tests
 
   lint:
-    runs-on:
-      group: ubuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -63,8 +59,7 @@ jobs:
           uv run poe lint
 
   publish:
-    runs-on:
-      group: ubuntu-latest
+    runs-on: ubuntu-latest
 
     # Only publish if this is a passing version-tag push to main OR a manual workflow_dispatch
     needs: [type-checking, pre-commit-hooks, unit-tests, lint]
