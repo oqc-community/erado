@@ -62,29 +62,26 @@ jobs:
         run: |
           uv run poe lint
 
-  # publish:
-  #   runs-on:
-  #     group: ubuntu-latest
+  publish:
+    runs-on:
+      group: ubuntu-latest
 
-  #   # Only publish if this is a passing version-tag push to main OR a manual workflow_dispatch
-  #   needs: [type-checking, pre-commit-hooks, unit-tests, lint]
-  #   if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+    # Only publish if this is a passing version-tag push to main OR a manual workflow_dispatch
+    needs: [type-checking, pre-commit-hooks, unit-tests, lint]
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
 
-  #   steps:
-  #     - uses: actions/checkout@v6
-  #       with:
-  #         fetch-depth: 0
-  #         fetch-tags: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
-  #     - uses: ./.github/actions/init
+      - uses: ./.github/actions/init
 
-  #     - name: Build package
-  #       run: |
-  #         uv build
+      - name: Build package
+        run: |
+          uv build
 
-  #     - name: Publish to internal PyPI
-  #       run: |
-  #         uv publish \
-  #           --publish-url ${{ vars.INTERNAL_PYPI_URL }} \
-  #           --username ${{ secrets.INTERNAL_PYPI_USERNAME }} \
-  #           --password ${{ secrets.INTERNAL_PYPI_PASSWORD }}
+      - name: Publish to internal PyPI
+        run: |
+          uv publish --index testpypi
