@@ -2,7 +2,7 @@
 
 Simulation suite for erasure noise and postselection as quantum error mitigation.
 
-[![build](https://github.com/oqc-community/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-community/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![PyPI - Version](https://img.shields.io/pypi/v/erado?logo=pypi&label=PyPI)](https://pypi.org/project/erado/) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-community.github.io/erado)
+[![build](https://github.com/oqc-community/erado/actions/workflows/build.yaml/badge.svg)](https://github.com/oqc-community/erado/actions/workflows/build.yaml) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit) [![PyPI - Version](https://img.shields.io/pypi/v/erado?logo=pypi&label=PyPI)](https://pypi.org/project/erado/) [![docs](https://img.shields.io/badge/Sphinx-docs-orange?logo=sphinx)](https://oqc-community.github.io/erado) [![GitHub License](https://img.shields.io/github/license/oqc-community/erado?logo=spdx)](https://github.com/oqc-community/erado/blob/main/LICENSE)
 
 [**ērādō**](https://en.wiktionary.org/wiki/erado) \
 Latin verb; *third conjugation*
@@ -36,7 +36,7 @@ uv add erado
 ```
 
 > ⚠️ **NOTE:**
-> GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise `qiskit-aer` will be installed (i.e. if on Windows etc.).
+> GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise [`qiskit-aer`](https://pypi.org/project/qiskit-aer/) will be installed (i.e. if on Windows etc.).
 
 ### From source (uv)
 
