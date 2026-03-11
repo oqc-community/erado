@@ -58,11 +58,24 @@ jobs:
         run: |
           uv run poe lint
 
+  secrets:
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v6
+          with:
+            fetch-depth: 0
+
+        - uses: gitleaks/gitleaks-action@v2
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
   publish:
     runs-on: ubuntu-latest
 
     # Only publish if this is a passing version-tag push to main OR a manual workflow_dispatch
-    needs: [type-checking, pre-commit-hooks, unit-tests, lint]
+    needs: [type-checking, pre-commit-hooks, unit-tests, lint, secrets]
     if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
 
     permissions:
