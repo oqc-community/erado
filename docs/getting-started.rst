@@ -99,19 +99,69 @@ Alternatively, you can explicitly transpile the circuit yourself (with the under
     backend = qiskit_aer.AerSimulator(method="statevector", noise_model=noise_model)
     result = backend.run(circuit_erasure, shots=1000).result()
 
-..
+Importantly -- across all of these methods -- you can configure your backend with additional noise models and other configurations as you wish!
 
     ⚠️ **NOTE:**
     Due to reliance on :class:`qiskit_aer.noise.NoiseModel`, the erasure transpiler pass approach is only compatible with the :class:`qiskit_aer.AerSimulator` backend.
 
-Note that -- across all of these methods -- you can configure your backend with additional noise models and other configurations as you wish!
+..
 
-    ⚠️ **WARNING:**
+    ⛔ **WARNING:**
     The erasure transpiler pass adds both an auxiliary classical register and an auxiliary quantum register for its internal logic. Therefore, you should avoid using :meth:`~qiskit_aer.noise.NoiseModel.add_all_qubit_quantum_error`, instead defining your other noise channels explicitly with :meth:`~qiskit_aer.noise.NoiseModel.add_quantum_error`.
 
 Simulation frontend
 -------------------
 
-TODO: mention using other noise models, especially for transpilerpass.
+Instead of using either of these erasure models directly, we also provide the :class:`erado.frontend.ErasureSimFrontend` class, which wraps the simulation to add some key optional features:
 
-TODO: briefly mention how fidelity can be enabled in the frontend, but needs a snapshot.
+#. postselection, where shots with erasures are rejected and the simulation continues until the target number of shots are accepted;
+#. check noise, where erasure detection is affected by classical false-positive and false-negative rates;
+#. per-shot circuit fidelity.
+
+Using the frontend is generally as simple as injecting the desired erasure model dependency alongside the backend and circuit::
+
+    from erado import (
+        circuits,
+        models,
+        fidelity,
+        frontend,
+    )
+
+    import qiskit_aer
+
+
+    # If requesting fidelities, the circuit must contain an end-of-line state snapshot
+    n_qubits = 5
+    circuit = circuits.qft_linear(n_qubits)
+    circuit.save_statevector(label=fidelity.STATE_LABEL, pershot=True)
+    circuit.measure_all()
+
+    erasure_rate = 0.01
+    erasure_model = models.ErasureCircuitSampler(circuit, erasure_rate)
+
+    # You can also seed the ErasureModel RNG for replicability
+    erasure_model.seed(0)
+
+    backend = qiskit_aer.AerSimulator(method="statevector")
+
+    sim_frontend = frontend.ErasureSimFrontend(
+        model=erasure_model,
+        false_positive_rate=0.005,
+        false_negative_rate=0.010,  # false negatives harm accepted circuit fidelity
+    )
+
+    results = sim_frontend.run(
+        backend=backend,
+        shots=1000,
+        postselect=True,
+        get_fidelities=True,
+    )
+
+The ``results`` object returned by :meth:`~erado.frontend.ErasureSimFrontend.run` is an :class:`erado.frontend.ErasureSimResults` struct, containing not only the counts but a range of data about the simulation run, such as rejection rate and fidelities (if requested).
+
+For each shot, the circuit fidelity is reported with respect to the cached ideal representation of the circuit.
+
+    💡 **TIP:**
+    ``get_fidelities`` also works for density-matrix simulations (i.e. ``AerSimulator(method="densitymatrix")``), in which case ``circuit.save_density_matrix`` must be used instead.
+
+    Also, note that the use of ``label=fidelity.STATE_LABEL`` and ``pershot=True`` is non-optional.

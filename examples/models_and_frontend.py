@@ -142,7 +142,6 @@ def example_ErasureSimFrontend():
     print(f"Time: {dt} seconds")
 
     # Ideal distribution, for comparison
-    # Note that this is done AFTER the multiprocessed-enabled ErasureCircuitSampler run to avoid Qiskit bugs
     counts_ideal = backend.run(circuit, shots=shots).result().get_counts()
     print(counts_ideal)
 
