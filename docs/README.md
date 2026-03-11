@@ -42,11 +42,48 @@ uv add erado
 
 This package uses [uv](https://docs.astral.sh/uv) for Python project management. For more information on installation from source and development/testing utilities, please see our [contribution guidelines](./CONTRIBUTING.md).
 
-## Usage
+## Example usage
 
-*TODO: brief, simplest example(s).*
+A motivating example for a simulation running a Qiskit circuit with erasure noise, imperfect erasure checks and postselection (including per-shot circuit fidelity) is as follows:
 
-For a more detailed introduction to how and why to use this library, see our ['Getting Started'](https://oqc-community.github.io/erado/latest/getting-started) page.
+```python
+from erado import (
+    circuits,
+    models,
+    fidelity,
+    frontend,
+)
+
+import qiskit_aer
+
+
+n_qubits = 5
+circuit = circuits.qft_linear(n_qubits)
+circuit.save_statevector(label=fidelity.STATE_LABEL, pershot=True)
+circuit.measure_all()
+
+erasure_model = models.ErasureCircuitSampler(
+    circuit=circuit,
+    erasure_rate=0.01,
+)
+
+backend = qiskit_aer.AerSimulator(method="statevector")
+
+sim_frontend = frontend.ErasureSimFrontend(
+    model=erasure_model,
+    false_positive_rate=0.005,
+    false_negative_rate=0.010,
+)
+
+results = sim_frontend.run(
+    backend=backend,
+    shots=1000,
+    postselect=True,
+    get_fidelities=True,
+)
+```
+
+For a more detailed introduction as to how and why to use this library, see our ['Getting Started'](https://oqc-community.github.io/erado/latest/getting-started) page.
 
 ## Acknowledgements
 
