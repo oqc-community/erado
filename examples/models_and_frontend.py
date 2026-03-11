@@ -144,11 +144,3 @@ def example_ErasureSimFrontend():
     # Ideal distribution, for comparison
     counts_ideal = backend.run(circuit, shots=shots).result().get_counts()
     print(counts_ideal)
-
-
-if __name__ == "__main__":
-    # example_ErasurePass()
-    # example_ErasureCircuitSampler()
-    # example_ErasureSimFrontend()
-
-    pass
