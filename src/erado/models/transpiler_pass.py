@@ -167,9 +167,9 @@ def add_erasure_noise(
 
     This model populates erasure events via Pauli noise on the :attr:`ErasurePass.ERASER_QREG_NAME` ancilla.
 
-    One should avoid using :meth:`add_all_qubit_quantum_error` in other error modes in the model, so as
-    not to introduce additional noise on this ancilla. Instead, prefer to use meth:`add_quantum_error`
-    on explicit qubits, via a loop or otherwise.
+    One should avoid using :meth:`~qiskit_aer.noise.NoiseModel.add_all_qubit_quantum_error` in other error modes in the
+    model, so as not to introduce additional noise on this ancilla. Instead, prefer to use
+    :meth:`~qiskit_aer.noise.NoiseModel.add_quantum_error` on explicit qubits, via a loop or otherwise.
 
     See ``example_ErasurePass`` for example usage.
 
