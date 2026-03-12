@@ -50,6 +50,10 @@ Two equivalent implementations of :class:`.ErasureModel` are provided. The first
 
 The ``counts`` object returned by :meth:`~erado.models.ErasureModel.run` is a :class:`~collections.Counter` [:class:`erado.models.CircuitState`], where each :class:`.CircuitState` contains an ``erasure`` field (a bitstring representing an erasure check per qubit) and a ``measure`` field (observed computational state bitstring as returned by the Qiskit backend).
 
+    💡 **TIP:**
+
+    You can load `OpenQASM <https://openqasm.com>`__ circuits (e.g. from a ``.qasm`` file) easily with the :func:`qiskit.qasm2.load`/:func:`~qiskit.qasm2.loads` functions.
+
 Erasure transpiler pass
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -102,11 +106,13 @@ Alternatively, you can explicitly transpile the circuit yourself (with the under
 Importantly -- across all of these methods -- you can configure your backend with additional noise models and other configurations as you wish!
 
     ⚠️ **NOTE:**
+
     Due to reliance on :class:`qiskit_aer.noise.NoiseModel`, the erasure transpiler pass approach is only compatible with the :class:`qiskit_aer.AerSimulator` backend.
 
 ..
 
     ⛔ **WARNING:**
+
     The erasure transpiler pass adds both an auxiliary classical register and an auxiliary quantum register for its internal logic. Therefore, you should avoid using :meth:`~qiskit_aer.noise.NoiseModel.add_all_qubit_quantum_error`, instead defining your other noise channels explicitly with :meth:`~qiskit_aer.noise.NoiseModel.add_quantum_error`.
 
 Simulation frontend
@@ -162,6 +168,7 @@ The ``results`` object returned by :meth:`~erado.frontend.ErasureSimFrontend.run
 For each shot, the circuit fidelity is reported with respect to the cached ideal representation of the circuit.
 
     💡 **TIP:**
+
     ``get_fidelities`` also works for density-matrix simulations (i.e. ``AerSimulator(method="densitymatrix")``), in which case ``circuit.save_density_matrix`` must be used instead.
 
     Also, note that the use of ``label=fidelity.STATE_LABEL`` and ``pershot=True`` is non-optional.

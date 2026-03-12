@@ -11,6 +11,7 @@ uv sync
 ```
 
 > ⚠️ **NOTE:**
+>
 > GPU capabilities are provided by the [`qiskit-aer-gpu-cu11`](https://pypi.org/project/qiskit-aer-gpu-cu11/) package, which is only available on x86_64 Linux. Therefore, `qiskit-aer-gpu-cu11` will be installed if `sys.platform() == "linux"`, otherwise [`qiskit-aer`](https://pypi.org/project/qiskit-aer/) will be installed (i.e. if on Windows etc.).
 
 ## Pre-commit hooks
