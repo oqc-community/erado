@@ -195,7 +195,7 @@ class ErasureCircuitSampler(util.MultiprocessingRNG):
                     initializer=self._reseed,
                     mp_context=util.get_mp_context(),
                 ) as executor:
-                max_workers = os.process_cpu_count()  # this is the default since Python 3.13
+                max_workers = len(os.sched_getaffinity(0))  # equivalent to get_process_count, the Python 3.13+ default
                 shots_each = shots // max_workers
                 counters_futures = [
                     executor.submit(self._run_mp, backend, shots_each, callbacks, i * shots_each)
