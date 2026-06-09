@@ -22,7 +22,7 @@ def get_latest_release() -> git.TagReference:
     return release_tags[-1]
 
 
-def main() -> None:
+def main(**kwargs) -> None:
     core.configure_logging()
 
     latest_release = get_latest_release()

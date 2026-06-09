@@ -10,7 +10,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def main(build_dir: str) -> None:
+def main(build_dir: str, **kwargs) -> None:
     core.configure_logging()
 
     build_path = pathlib.Path(build_dir)
