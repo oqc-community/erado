@@ -132,6 +132,8 @@ select = [
     "E",       # Enable pycodestyle rules (line length etc.)
     "F",       # Enable Pyflakes rules (common code errors e.g. unused imports)
     "I",       # Import statement sorting
+    "ICN",     # Import conventions
+    "TID",     # Tidy imports (e.g. enforcing absolute imports)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -142,8 +144,14 @@ select = [
     "F403",    # Allow wildcard imports in __init__.py (__all__ should be defined in such imported modules)
 ]
 
+# ANN
+[tool.ruff.lint.flake8-annotations]
+suppress-dummy-args = true
+
+# D
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.lint.flake8-annotations]
-suppress-dummy-args = true
+# TID
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
