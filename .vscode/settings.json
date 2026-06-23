@@ -7,7 +7,7 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "autoDocstring.docstringFormat": "google-notypes",
-    "todo-tree.filtering.excludeGlobs": [
+    "better-todo-tree.filtering.excludeGlobs": [
         "**/node_modules/*/**",
         "typings/",
     ],

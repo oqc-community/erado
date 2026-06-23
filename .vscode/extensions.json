@@ -3,6 +3,6 @@
         "njpwerner.autodocstring",
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
-        "gruntfuggly.todo-tree",
+        "fanaticpythoner.better-todo-tree",
     ]
 }
