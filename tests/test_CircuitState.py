@@ -1,9 +1,8 @@
 """Tests for de-/serialisation of `CircuitState`."""
 
-from erado.models import CircuitState
-
 import pytest
 
+from erado.models import CircuitState
 
 N = 5
 """Number of qubits to use in these tests, unless otherwise specified."""

@@ -1,19 +1,18 @@
 """Tests for expected behaviour of `ErasureSimFrontend`."""
 
-from erado.models import (
-    ErasureModel,
-    ErasurePassJob,
-    ErasureCircuitSampler,
-)
+from qiskit import ClassicalRegister
+from qiskit_aer import AerSimulator
+
+import erado.circuits as circuits
 from erado.frontend import (
     ErasureSimFrontend,
     ErasureSimResults,
 )
-import erado.circuits as circuits
-
-from qiskit import ClassicalRegister
-from qiskit_aer import AerSimulator
-
+from erado.models import (
+    ErasureCircuitSampler,
+    ErasureModel,
+    ErasurePassJob,
+)
 
 N = 4
 """Number of qubits to use in these tests, unless otherwise specified."""

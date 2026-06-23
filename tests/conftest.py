@@ -1,9 +1,8 @@
 """Main pytest configuration file."""
 
-import erado.models as models
-
 import pytest
 
+import erado.models as models
 
 MODEL_TYPES: list[type[models.ErasureModel]] = [
     models.ErasureCircuitSampler,

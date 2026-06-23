@@ -1,19 +1,18 @@
 """Provides a frontend class for using the erasure simulation models."""
 
-from erado import (
-    models,
-    util,
-    fidelity,
-)
-
-import qiskit.providers
-
-import pydantic
-import numpy as np
-
 import collections
 import contextlib
 from multiprocessing import managers
+
+import numpy as np
+import pydantic
+import qiskit.providers
+
+from erado import (
+    fidelity,
+    models,
+    util,
+)
 
 
 class ErasureSimResults(pydantic.BaseModel):

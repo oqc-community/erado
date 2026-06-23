@@ -1,16 +1,14 @@
 """Provides fidelity calculation as a per-shot callback."""
 
-from erado import models
+import logging
+from collections.abc import Generator
+from multiprocessing import managers
 
+import numpy as np
 import qiskit.circuit
 from qiskit import quantum_info
 
-import numpy as np
-
-import logging
-from multiprocessing import managers
-from collections.abc import Generator
-
+from erado import models
 
 _logger = logging.getLogger(__name__)
 

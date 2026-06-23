@@ -1,24 +1,22 @@
 """Defines the circuit-sampler simulation model."""
 
-from erado import (
-    util,
-    models,
-)
-
-import qiskit.circuit
-import qiskit.providers
-
-import numpy as np
-
-from concurrent import futures
-import os
-import logging
 import collections
+import logging
+import os
 from collections.abc import (
     Generator,
     Sequence,
 )
+from concurrent import futures
 
+import numpy as np
+import qiskit.circuit
+import qiskit.providers
+
+from erado import (
+    models,
+    util,
+)
 
 _logger = logging.getLogger(__name__)
 

@@ -1,20 +1,19 @@
 """Miscellaneous utilities used across the erado library."""
 
-import numpy as np
-import pydantic
-from typing_extensions import Annotated
-
-import pathlib
+import contextlib
 import multiprocessing
 import multiprocessing.context
-import contextlib
 import os
+import pathlib
 from collections.abc import (
-    Iterable,
     Generator,
+    Iterable,
     Sized,
 )
 
+import numpy as np
+import pydantic
+from typing_extensions import Annotated
 
 type NPVector[T: np.generic] = np.ndarray[tuple[int], np.dtype[T]]
 """1-dimensional NumPy array of a given type."""

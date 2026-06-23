@@ -125,12 +125,13 @@ ignore = [
     "ANN204",  # Don't require return types on 'special' methods
 ]
 select = [
-    "E",       # Enable pycodestyle rules (line length etc.)
+    "ANN",     # Type annotations are mandatory
+    "COM",     # Standardise trailing commas
     "D",       # Enable pydocstyle rules
     "D401",    # Docstrings must have imperative mood
-    "ANN",     # Type annotations are mandatory
+    "E",       # Enable pycodestyle rules (line length etc.)
     "F",       # Enable Pyflakes rules (common code errors e.g. unused imports)
-    "COM",     # Standardise trailing commas
+    "I",       # Import statement sorting
 ]
 
 [tool.ruff.lint.per-file-ignores]

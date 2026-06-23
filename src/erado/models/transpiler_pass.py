@@ -1,21 +1,20 @@
 """Defines the transpiler-pass simulation model."""
 
-from erado import models
+import collections
+import copy
+import itertools
+from collections.abc import Sequence
+from typing import override
 
 import qiskit.circuit as qkc
-import qiskit.transpiler
-import qiskit.transpiler.basepasses
 import qiskit.dagcircuit
 import qiskit.providers
-
+import qiskit.transpiler
+import qiskit.transpiler.basepasses
 import qiskit_aer
 import qiskit_aer.noise
 
-import itertools
-import copy
-import collections
-from collections.abc import Sequence
-from typing import override
+from erado import models
 
 
 class ErasurePass(qiskit.transpiler.basepasses.TransformationPass):

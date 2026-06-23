@@ -1,13 +1,7 @@
 """Defines the core erasure simulation components."""
 
-import qiskit.circuit
-import qiskit.providers
-import qiskit.result
-
-import pydantic
-
-import dataclasses
 import collections
+import dataclasses
 from collections.abc import (
     Callable,
     Sequence,
@@ -17,6 +11,11 @@ from typing import (
     Self,
     override,
 )
+
+import pydantic
+import qiskit.circuit
+import qiskit.providers
+import qiskit.result
 
 
 class CircuitState(pydantic.BaseModel):
