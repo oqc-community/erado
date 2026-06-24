@@ -103,7 +103,7 @@ Alternatively, you can explicitly transpile the circuit yourself (with the under
     backend = qiskit_aer.AerSimulator(method="statevector", noise_model=noise_model)
     result = backend.run(circuit_erasure, shots=1000).result()
 
-Importantly -- across all of these methods -- you can configure your backend with additional noise models and other configurations as you wish!
+..
 
     ⚠️ **NOTE:**
 
@@ -172,3 +172,60 @@ For each shot, the circuit fidelity is reported with respect to the cached ideal
     ``get_fidelities`` also works for density-matrix simulations (i.e. ``AerSimulator(method="densitymatrix")``), in which case ``circuit.save_density_matrix`` must be used instead.
 
     Also, note that the use of ``label=fidelity.STATE_LABEL`` and ``pershot=True`` is non-optional.
+
+Concurrent noise models
+-----------------------
+
+Importantly -- across all of these methods -- you can configure your backend with additional noise models and other configurations as you wish!
+
+For example, you can run a simulation including gate depolarising noise in addition to erasure noise::
+
+    from erado import (
+        circuits,
+        models,
+        frontend,
+    )
+
+    import qiskit
+    import qiskit_aer
+
+
+    n_qubits = 5
+    circuit = circuits.qft_linear(n_qubits)
+    circuit.measure_all()
+
+    # Default basis gates used by Qiskit error model, defined here for clarity and consistency
+    basis_gates_1Q = ["rz", "sx"]
+    basis_gates_2Q = ["cx"]
+    noise_model = qiskit_aer.noise.NoiseModel()
+
+    # Add 1Q and 2Q gate depolarising channels to the noise model
+    for q in range(n_qubits):
+        # Avoid add_all_qubit_quantum_error() in case we want to use ErasurePassJob instead
+        error_1Q = qiskit_aer.noise.depolarizing_error(0.001, 1)
+        noise_model.add_quantum_error(error_1Q, basis_gates_1Q, [q])
+
+        error_2Q = qiskit_aer.noise.depolarizing_error(0.01, 2)
+        for q_other in range(n_qubits):
+            noise_model.add_quantum_error(error_2Q, basis_gates_2Q, [q, q_other])
+
+    backend = qiskit_aer.AerSimulator(method="statevector", noise_model=noise_model)
+
+    # Transpile circuit for the above basis gates
+    pass_manager = qiskit.generate_preset_pass_manager(backend=backend)
+    circuit_transpiled = pass_manager.run(circuit)
+
+    erasure_rate = 0.01
+    erasure_model = models.ErasureCircuitSampler(circuit_transpiled, erasure_rate)
+
+    sim_frontend = frontend.ErasureSimFrontend(
+        model=erasure_model,
+        false_positive_rate=0.005,
+        false_negative_rate=0.010,
+    )
+
+    results = sim_frontend.run(
+        backend=backend,
+        shots=1000,
+        postselect=True,
+    )
