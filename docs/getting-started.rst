@@ -229,3 +229,24 @@ For example, you can run a simulation including gate depolarising noise in addit
         shots=1000,
         postselect=True,
     )
+
+Idling error
+------------
+
+``erado`` also provides a path to simulating qubit idling error with a utility to automatically insert gates into idle periods. This is a dynamical decoupling (DD) scheduler configured to populate sequences of a repeated gate (e.g. the identity operator) into idle periods of length :math:`t`, such that the number of gates inserted into the idle period is equal to
+
+.. math ::
+    \min\left\{ t\left\lfloor\frac{t}{2}\right\rfloor , k \right\} \ ,
+
+where :math:`k` is some tunable maximum sequence length.
+
+You can transform an arbitrary circuit with this default scheduling behaviour using the :func:`erado.circuits.pad_idling` function::
+
+    circuit = circuits.qft_linear(5)
+    circuit_idling = erado.circuits.pad_idling(circuit, max_idle_length=14)
+
+These idling gates can then be subjected to noise models as you wish.
+
+For more information, see Appendix A 'Modelling idling error' in Griffiths et al. 2026 ().
+
+.. TODO: Insert arxiv link!
