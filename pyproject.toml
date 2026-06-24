@@ -17,6 +17,7 @@ dependencies = [
     "qiskit-aer-gpu-cu11>=0.17.2; sys_platform == 'linux'",
     "qiskit-aer>=0.17.2; sys_platform != 'linux'",
     "pydantic>=2.12.0",
+    "qiskit-ibm-runtime>=0.47.0",
 ]
 
 [dependency-groups]
