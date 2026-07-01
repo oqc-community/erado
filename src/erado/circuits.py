@@ -85,9 +85,7 @@ def pad_idling(
     - 8: inserts 8 gates
     - ...ad infinitum.
 
-    For more information, see Appendix A 'Modelling idling error' in Griffiths et al. 2026 ().
-
-    TODO: Insert arxiv link!
+    For more information, see Appendix A 'Modelling idling error' in Griffiths et al. 2026 (https://arxiv.org/abs/2606.31428).
 
     Args:
         circuit: Circuit to transform.

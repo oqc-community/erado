@@ -17,7 +17,23 @@ Latin verb; *third conjugation*
 
 For a conceptual introduction, usage instructions and API reference, please see [the library documentation](https://oqc-community.github.io/erado/latest/getting-started).
 
-For theoretical background and numerical details, see our corresponding paper: *coming very soon!*
+For theoretical background and numerical details, see our corresponding paper: ['The limits of erasure-based postselection for quantum error mitigation,' 2026, arXiv:2606.31428 [quant-ph]](https://arxiv.org/abs/2606.31428), by [Sam J. Griffiths](https://github.com/sgriffiths-oqc), [Jamie Friel](https://github.com/jfriel-oqc) and [Brian Vlastakis](https://github.com/bvlastakis-oqc).
+
+If using or referencing this work, please cite the paper as follows ([BibLaTeX](https://ctan.org/pkg/biblatex)):
+
+```bibtex
+@online{griffithsLimitsErasurebasedPostselection2026,
+  title = {The Limits of Erasure-Based Postselection for Quantum Error Mitigation},
+  author = {Griffiths, Sam J. and Friel, Jamie and Vlastakis, Brian},
+  date = {2026-06-30},
+  eprint = {2606.31428},
+  eprinttype = {arXiv},
+  eprintclass = {quant-ph},
+  doi = {10.48550/arXiv.2606.31428},
+  url = {https://arxiv.org/abs/2606.31428},
+  pubstate = {prepublished}
+}
+```
 
 ## Installation
 

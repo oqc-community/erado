@@ -10,7 +10,7 @@ In quantum error correction, erasures can equivalently be thought of as errors c
 
 Erasure codes/channels are generally easier to decode; however, we can also more fundamentally consider *postselection* for general erasure error mitigation. In practical terms, we simply discard shots where one or more erasures occurred. This theoretically fully mitigates against the erasure channel -- if accounting for errors on the erasure checks themselves, as well as other, unheralded Pauli channels (e.g. circuit-level depolarising noise).
 
-``erado`` can be used to simulate circuit-level erasure noise and to run postselection experiments. For more information, please see our corresponding paper: *coming very soon!*
+``erado`` can be used to simulate circuit-level erasure noise and to run postselection experiments. For more information, please see our corresponding paper: `'The limits of erasure-based postselection for quantum error mitigation,' 2026, arXiv:2606.31428 [quant-ph] <https://arxiv.org/abs/2606.31428>`__.
 
 Erasure noise models
 --------------------
@@ -247,6 +247,4 @@ You can transform an arbitrary circuit with this default scheduling behaviour us
 
 These idling gates can then be subjected to noise models as you wish.
 
-For more information, see Appendix A 'Modelling idling error' in Griffiths et al. 2026 ().
-
-.. TODO: Insert arxiv link!
+For more information, see Appendix A 'Modelling idling error' in Griffiths et al. 2026 (https://arxiv.org/abs/2606.31428).
