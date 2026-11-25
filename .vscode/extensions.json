@@ -4,5 +4,6 @@
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
         "fanaticpythoner.better-todo-tree",
+        "davidanson.vscode-markdownlint",
     ]
 }
