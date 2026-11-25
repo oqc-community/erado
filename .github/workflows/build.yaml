@@ -120,12 +120,12 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # Only publish if this is a passing version-tag push to main OR a manual workflow_dispatch
+    # Only publish if this is a passing version-tag push to main
     needs: [required-checks]
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+    if: startsWith(github.ref, 'refs/tags/v')
 
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
@@ -135,6 +135,22 @@ jobs:
           fetch-tags: true
 
       - uses: astral-sh/setup-uv@v7
+
+      - name: Get version string from tag
+        id: version
+        run: |
+          echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+
+      - name: Parse PEP 440 version
+        id: pep440
+        run: |
+          uv run scripts/pep440.py ${{ steps.version.outputs.version }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          prerelease: ${{ steps.pep440.outputs.pre != '' }}
+          generate_release_notes: true
 
       - name: Build package
         run: |
