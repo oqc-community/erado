@@ -99,25 +99,53 @@ def pad_idling(
     Returns:
         Circuit with padded idle periods.
     """
-    durations_raw: list[tuple[str, Iterable[int] | None, float]] = [
-        (gate.name, None, circuit_gate_time)
-        for gate in circuit
-        if gate.name != "barrier"
-    ]
+    # Dummy target for specifying gate durations
+    target = qiskit.transpiler.Target()
 
-    durations = qiskit.transpiler.InstructionDurations(durations_raw + [("id", None, idle_gate_time)])
+    # Set all circuit gate durations to circuit_gate_time
+    instruction_objs: dict[str, qiskit.circuit.Instruction] = {}
+    instruction_qargs: dict[str, set[Iterable[int]]] = {}
+    for gate in circuit:
+        if gate.name not in {idle_gate().name, "barrier"}:
+            if gate.name not in instruction_objs:
+                instruction_objs[gate.name] = gate.operation
 
+            if gate.name not in instruction_qargs:
+                instruction_qargs[gate.name] = set()
+
+            instruction_qargs[gate.name].add(tuple(circuit.find_bit(q)[0] for q in gate.qubits))
+
+    for gate_name in instruction_objs.keys():
+        target.add_instruction(
+            instruction_objs[gate_name],
+            {
+                qargs: qiskit.transpiler.InstructionProperties(duration=circuit_gate_time)
+                for qargs in instruction_qargs[gate_name]
+            },
+        )
+
+    # Set the idle gate duration to idle_gate_time
+    target.add_instruction(
+        idle_gate(),
+        {
+            (circuit.find_bit(q)[0],): qiskit.transpiler.InstructionProperties(duration=idle_gate_time)
+            for q in circuit.qubits
+        },
+    )
+
+    # Enumerate all possible idle sequences
     idle_sequence = [
         [idle_gate()] * n
         for n in reversed(range(2, max_idle_length + 1, 2))
     ]
 
-    # FIXME: `durations` param is deprecated as of qiskit_ibm_runtime v0.43.0 and will be removed in future.
     pass_manager = qiskit.transpiler.PassManager([
-        scheduling.ALAPScheduleAnalysis(durations),
-        scheduling.PadDynamicalDecoupling(  # type: ignore # Type hints do not correctly support PadDynamicalDecoupling
-            durations,
+        scheduling.ALAPScheduleAnalysis(
+            target=target,
+        ),
+        scheduling.PadDynamicalDecoupling(
             idle_sequence,
+            target=target,
             skip_reset_qubits=False,
             sequence_min_length_ratios=[sequence_min_length_ratio]*len(idle_sequence),  # type: ignore # Parameter incorrectly hinted as int(s)
         ),
